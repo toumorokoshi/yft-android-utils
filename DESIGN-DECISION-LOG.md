@@ -1,5 +1,16 @@
 # Design Decision Log
 
+## 2026-10-26: Gaps in GAPS.md, not an issue tracker
+
+`AGENTS.md` asked agents to file issues with the `bd` (beads) CLI, which
+this project does not use.
+
+- **GAPS.md is the only place for open work.** The `bd` instructions are
+  removed; agents already record remaining work in `GAPS.md`.
+- **Descriptions follow `/yft-pr-commit-description`.** Commit and PR
+  descriptions use that skill's template when it is available, so they
+  share one structure.
+
 ## 2026-10-26: Project setup
 
 The repository had only the shared agent guidelines. It needed an app to

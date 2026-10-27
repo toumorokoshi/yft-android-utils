@@ -21,5 +21,3 @@ workspace, logging, tests, linting and CI that builds the APK.
 - **No device tests.** There are no `integration_test` tests run on an
   emulator, so CI does not start the app on Android.
 - **No license.** The repository has no `LICENSE` file.
-- **No issue tracker set up.** `bd` is not installed on the machine that
-  made iteration 1, so these gaps are not filed as issues.

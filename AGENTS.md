@@ -27,16 +27,6 @@ Always add and update documentation as appropriate. Update at least the followin
 - any relevant files in the `docs/` directory.
 - any updated designs and considerations in the `specs/` directory.
 
-## Issue Management
-
-File issues liberally to help keep context minimal and focus on your current
-task.
-
-- Issues are managed via the `bd` commmand line.
-- Issues are created via `bd create`
-  - Priority should be set to the following (P2 otherwise):
-    - P0: Any required project fundamentals or initialization
-
 ## Committing code
 
 - **unless** the prompt contains "don't commit", commit the code.
@@ -45,6 +35,8 @@ task.
 - Use the conventional commit format for commit messages.
 - The commit description must explain the problem first.
 - The commit description must a summary of each area modified.
+- Write PR descriptions and commit descriptions with the
+  `/yft-pr-commit-description` skill, if it is available.
 
 ## Linting
 
