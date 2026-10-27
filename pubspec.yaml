@@ -1,0 +1,8 @@
+name: yft_android_utils_workspace
+publish_to: none
+environment:
+  sdk: ^3.13.5
+workspace:
+  - app
+dev_dependencies:
+  lints: ^6.0.0
