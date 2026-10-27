@@ -50,6 +50,25 @@ and uploads the APK as the `android-apk` artifact of each run.
 The version comes from `version:` in `app/pubspec.yaml`: the part before
 `+` is the `versionName` and the number after it the `versionCode`.
 
+## Releasing
+
+[`.github/workflows/release.yml`](../.github/workflows/release.yml)
+publishes a GitHub Release with the APK and a `SHA256SUMS` file when a
+`v*` tag is pushed:
+
+1. Set `version:` in `app/pubspec.yaml`, for example `0.2.0+2`. Raise the
+   build number (after `+`) on every release: Android refuses an update
+   with a lower `versionCode`.
+2. Commit and push to `main`.
+3. Tag and push: `git tag v0.2.0 && git push origin v0.2.0`.
+
+The workflow fails if the tag does not match the pubspec version (`v` plus
+the part before `+`), or if the build number is not above the previous
+tag's. Without the signing secrets the APK is debug-signed and the
+release is marked as a prerelease. Running the workflow by hand
+(**Actions > Release > Run workflow**) builds the APK as a run artifact
+without publishing.
+
 ## Signing
 
 Without signing secrets the APK is signed with the debug key: it installs

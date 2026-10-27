@@ -16,9 +16,13 @@ screen widget per file.
   [docs/android.md](docs/android.md)). A script to create the keystore
   and upload the secrets, like shireitou's `scripts/android-keystore`, is
   not written.
-- **No release workflow.** There is no tagged release that publishes the
-  APK (shireitou's `release.yml` is the model); CI only uploads it as a
-  run artifact.
+- **Releases are debug-signed until the key exists.** The release
+  workflow publishes `v*` tags, but without the `ANDROID_KEYSTORE*`
+  secrets each release is a debug-signed prerelease. Once the key is
+  set, the first signed release cannot update an install of an earlier
+  debug-signed one; it has to be uninstalled first.
+- **Release workflow not yet run.** No `v*` tag has been pushed, so the
+  publish job has not run on GitHub.
 - **No app icon.** The app uses Flutter's default launcher icon.
 - **No device tests.** There are no `integration_test` tests run on an
   emulator, so CI does not start the app on Android. The Kotlin code (the

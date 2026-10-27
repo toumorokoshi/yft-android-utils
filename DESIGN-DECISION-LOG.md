@@ -1,5 +1,23 @@
 # Design Decision Log
 
+## 2026-10-27: Release workflow for tagged APKs
+
+CI only uploaded the APK as a run artifact, so there was no stable place
+to download a release from. `release.yml` now publishes a GitHub Release
+for each `v*` tag.
+
+- **Modeled on shireitou's `release.yml`**, reduced to Android: the same
+  tag-matches-pubspec and rising-build-number checks, then
+  `scripts/package-android`, then `softprops/action-gh-release`.
+- **Debug-signed prereleases instead of failing.** shireitou fails a
+  tagged release without the signing key. This repository has no key
+  yet, so a tag publishes a debug-signed APK marked as a prerelease with
+  a warning in its notes, rather than blocking releases until the key
+  exists.
+- **Tags only.** CI already builds the APK on every push and pull
+  request, so the release workflow does not run on `main`; a manual run
+  builds without publishing.
+
 ## 2026-10-27: Add a widget from the editor
 
 Placing a widget from the home screen's widget list means picking the

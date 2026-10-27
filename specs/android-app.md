@@ -38,6 +38,11 @@
 
 - CI builds a release APK on every push to `main` and every pull
   request, and uploads it as an artifact.
+- Pushing a `v<version>` tag publishes the APK as a GitHub Release. The
+  tag must match the `app/pubspec.yaml` version, and the build number
+  must be above the previous tag's.
+- A release without the signing secrets is debug-signed and published
+  as a prerelease.
 - Release builds are signed with the release key when the signing secrets
   are set, and with the debug key otherwise (see
   [docs/android.md](../docs/android.md)).
