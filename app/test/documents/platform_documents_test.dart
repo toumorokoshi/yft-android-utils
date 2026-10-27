@@ -20,6 +20,7 @@ void main() {
       return switch (call.method) {
         'pick' || 'create' || 'initialDocument' => notes.toMap(),
         'read' => '# notes',
+        'pinWidget' => true,
         _ => null,
       };
     });
@@ -40,6 +41,12 @@ void main() {
 
     expect(calls.map((c) => c.method), ['read', 'write']);
     expect(calls.last.arguments, {'uri': notes.uri, 'text': 'text'});
+  });
+
+  test('pin sends the document', () async {
+    expect(await documents.pin(notes), isTrue);
+    expect(calls.single.method, 'pinWidget');
+    expect(calls.single.arguments, notes.toMap());
   });
 
   test('initial returns the launch document', () async {
@@ -65,6 +72,7 @@ void main() {
 
     expect(await documents.pick(), isNull);
     expect(await documents.initial(), isNull);
+    expect(await documents.pin(notes), isFalse);
     expect(await documents.read(const Document(uri: 'u', name: 'n')), '');
   });
 }

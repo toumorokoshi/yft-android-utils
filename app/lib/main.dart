@@ -20,6 +20,7 @@ void main() {
         documents: documents,
         launches: documents,
         recents: SharedPreferencesRecentDocuments(),
+        widgets: documents,
       ),
     ),
   );

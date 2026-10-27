@@ -10,9 +10,10 @@ final _log = Logger('documents');
 /// The channel served by `DocumentsChannel.kt` in the Android app.
 const documentsChannel = MethodChannel('dev.yft.yft_android_utils/documents');
 
-/// [DocumentStore] and [DocumentLaunches] backed by the Android Storage
-/// Access Framework, through [documentsChannel].
-class PlatformDocuments implements DocumentStore, DocumentLaunches {
+/// [DocumentStore], [DocumentLaunches] and [DocumentWidgets] backed by the
+/// Android Storage Access Framework, through [documentsChannel].
+class PlatformDocuments
+    implements DocumentStore, DocumentLaunches, DocumentWidgets {
   PlatformDocuments({this._channel = documentsChannel}) {
     _channel.setMethodCallHandler(_handle);
   }
@@ -51,6 +52,10 @@ class PlatformDocuments implements DocumentStore, DocumentLaunches {
   @override
   Future<void> write(Document document, String text) =>
       _channel.invokeMethod<void>('write', {'uri': document.uri, 'text': text});
+
+  @override
+  Future<bool> pin(Document document) async =>
+      await _channel.invokeMethod<bool>('pinWidget', document.toMap()) ?? false;
 
   @override
   Future<Document?> initial() async =>

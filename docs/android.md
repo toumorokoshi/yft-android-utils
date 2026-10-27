@@ -24,8 +24,19 @@ screen, choose **Widgets**, find **yft android utils** and drag **Markdown
 file** onto the screen. The system file picker opens; the file you choose
 is the one the widget opens. Place one widget per file.
 
-The widget only stores the file's URI; the app keeps access to it through
-a persisted Storage Access Framework permission. If the permission is
+Or open the file in the editor and tap **Add widget to home screen** in
+the app bar. The home screen asks where to place the widget, which then
+opens that file with no picker. This needs Android 8.0 or later and a
+home screen that lets apps add widgets (most do, including the Pixel
+launcher).
+
+The widget only stores the file's URI. Access comes from a persisted
+Storage Access Framework permission: picking a file grants the app access
+to it, and the app calls `takePersistableUriPermission` so Android keeps
+that grant across restarts, reboots and updates. The grant belongs to the
+app, so every widget, and the recent list, for the same file share it. It
+ends when the app is uninstalled or its data is cleared, or when the user
+or the file's provider revokes it. If the permission is
 revoked, a tap opens the app on the launcher; if the file was moved or
 deleted, the editor says it could not open the file.
 

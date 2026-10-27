@@ -65,12 +65,26 @@ class FakeRecentDocuments implements RecentDocuments {
       documents = addRecentDocument(documents, document);
 }
 
+/// Records pinned documents; [supported] is what the home screen reports.
+class FakeDocumentWidgets implements DocumentWidgets {
+  bool supported = true;
+  final pinned = <Document>[];
+
+  @override
+  Future<bool> pin(Document document) async {
+    if (supported) pinned.add(document);
+    return supported;
+  }
+}
+
 AppServices fakeServices({
   FakeDocumentStore? documents,
   FakeDocumentLaunches? launches,
   FakeRecentDocuments? recents,
+  FakeDocumentWidgets? widgets,
 }) => AppServices(
   documents: documents ?? FakeDocumentStore(),
   launches: launches ?? FakeDocumentLaunches(),
   recents: recents ?? FakeRecentDocuments(),
+  widgets: widgets ?? FakeDocumentWidgets(),
 );

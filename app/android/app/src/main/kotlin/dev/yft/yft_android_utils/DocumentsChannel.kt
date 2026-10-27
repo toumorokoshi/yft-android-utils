@@ -39,6 +39,14 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
                     Documents.write(context, uriArgument(call), call.argument<String>("text") ?: "")
                     null
                 }
+            "pinWidget" ->
+                result.success(
+                    MarkdownWidgets.requestPin(
+                        context,
+                        uriArgument(call),
+                        call.argument<String>("name") ?: "",
+                    )
+                )
             "initialDocument" -> {
                 val intent = if (initialDocumentSent) null else activity.intent
                 initialDocumentSent = true

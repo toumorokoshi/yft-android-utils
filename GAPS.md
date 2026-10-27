@@ -39,9 +39,15 @@ screen widget per file.
   open it (needs `url_launcher`).
 - **Large files.** The whole file is read and written on each save;
   multi-megabyte files will be slow.
-- **No "add widget" button.** A widget can only be added from the home
-  screen's widget picker. `AppWidgetManager.requestPinAppWidget` could
-  add one for the open file from inside the editor.
+- **Pinning is untested across home screens.** Some home screens may run
+  the configure activity for a widget pinned from the app. It skips the
+  picker when the widget was pinned in the last minute, so a reconfigure
+  started within that minute also closes without asking for a file.
+- **Persisted permissions are never released.** Removing a widget or a
+  recent file keeps the app's grant. Android caps persisted grants per app
+  (128 before Android 11, 512 since), so a long-lived install could hit
+  the cap. Grants no widget or recent file uses could be released with
+  `releasePersistableUriPermission`.
 - **Widget names go stale.** The widget shows the file name from when it
   was placed; a renamed file keeps the old label until reconfigured.
 - **Some providers may not support truncating writes.** Saves open the

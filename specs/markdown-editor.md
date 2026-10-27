@@ -36,8 +36,17 @@ A sub-app that edits one markdown file on the device, saving as you type.
 - Placing the widget opens the system file picker; the chosen file is
   bound to that widget. Cancelling the picker removes the widget. On
   Android 12 and later the widget can be reconfigured to another file.
+- The editor's **Add widget to home screen** button asks the home screen
+  to add a widget for the open file (Android 8.0 and later). The home
+  screen shows its own prompt to place it, and the placed widget opens
+  that file without showing the picker. When the home screen cannot add
+  widgets for apps, the editor says to add one from the widget list.
 - The widget shows a document icon and the file name.
 - Tapping it opens the app straight into the editor for that file, with
   the launcher behind it, replacing any editor already open.
+- Access is the app's persisted permission for the file, not something
+  the widget holds: it survives restarts, reboots and app updates, and
+  ends when the app is uninstalled or its data is cleared, the permission
+  is revoked, or the file is moved or deleted.
 - The app only opens files it holds a persisted permission for, so other
   apps cannot use the widget's intent to make it write to their files.

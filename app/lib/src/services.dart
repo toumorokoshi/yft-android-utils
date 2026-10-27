@@ -8,9 +8,11 @@ class AppServices {
     required this.documents,
     required this.launches,
     required this.recents,
+    required this.widgets,
   });
 
   final DocumentStore documents;
   final DocumentLaunches launches;
   final RecentDocuments recents;
+  final DocumentWidgets widgets;
 }

@@ -50,6 +50,14 @@ abstract interface class DocumentStore {
   Future<void> write(Document document, String text);
 }
 
+/// Home screen widgets that open a [Document].
+abstract interface class DocumentWidgets {
+  /// Asks the home screen to add a widget that opens [document]. The home
+  /// screen then asks the user to place it. Returns false when it cannot
+  /// add widgets for apps.
+  Future<bool> pin(Document document);
+}
+
 /// Documents the app is asked to open from outside, such as a tap on a home
 /// screen widget.
 abstract interface class DocumentLaunches {

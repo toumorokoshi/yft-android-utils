@@ -15,8 +15,9 @@
   first screen) and `LauncherPage`, the grid of sub-app tiles.
 - `app/lib/src/documents/`: files on the device.
   - `document.dart`: the `Document` model (a `content://` URI and a name)
-    and the `DocumentStore` and `DocumentLaunches` interfaces.
-  - `platform_documents.dart`: both interfaces over the
+    and the `DocumentStore`, `DocumentLaunches` and `DocumentWidgets`
+    interfaces.
+  - `platform_documents.dart`: all three interfaces over the
     `dev.yft.yft_android_utils/documents` method channel.
   - `recent_documents.dart`: pure functions for the recent-files list,
     and `SharedPreferencesRecentDocuments`, which stores it.
@@ -51,8 +52,12 @@ In `app/android/app/src/main/kotlin/dev/yft/yft_android_utils/`:
 - `MainActivity.kt`: creates the channel and forwards new intents and
   activity results to it.
 - `MarkdownWidget.kt`: the 1x1 widget. `MarkdownWidgetProvider` draws it,
-  `MarkdownWidgetConfigureActivity` picks its file when it is placed, and
-  `MarkdownWidgets` stores each widget's file in shared preferences.
+  `MarkdownWidgetConfigureActivity` picks its file when it is placed from
+  the widget list, `MarkdownWidgets.requestPin` asks the home screen to add
+  one for a file (the editor's "add widget" button),
+  `MarkdownWidgetPinnedReceiver` binds the file once that widget is
+  placed, and `MarkdownWidgets` stores each widget's file in shared
+  preferences.
 
 The widget's layout, drawables, strings and provider info are in
 `app/android/app/src/main/res/`.

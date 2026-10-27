@@ -42,8 +42,11 @@ Future<void> openMarkdownEditor(
   );
   final route = MaterialPageRoute<void>(
     settings: const RouteSettings(name: '/markdown/edit'),
-    builder: (_) =>
-        MarkdownEditorPage(document: document, store: services.documents),
+    builder: (_) => MarkdownEditorPage(
+      document: document,
+      store: services.documents,
+      widgets: services.widgets,
+    ),
   );
   return aboveLauncher
       ? navigator.pushAndRemoveUntil(route, (r) => r.isFirst)

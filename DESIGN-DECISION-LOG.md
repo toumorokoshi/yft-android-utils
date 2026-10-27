@@ -1,5 +1,24 @@
 # Design Decision Log
 
+## 2026-10-27: Add a widget from the editor
+
+Placing a widget from the home screen's widget list means picking the
+same file again. The editor now has an "add widget to home screen"
+button for the open file.
+
+- **`requestPinAppWidget` with a callback.** The home screen shows its
+  own placement prompt; when the user places the widget, it sends the
+  new widget id to `MarkdownWidgetPinnedReceiver` through a mutable
+  `PendingIntent` carrying the file's URI and name, which binds them.
+  The app already holds the file's persisted permission, so no new grant
+  is needed.
+- **A one-minute "just pinned" record.** Android does not say whether
+  the home screen runs the configure activity for pinned widgets. If it
+  does, the activity skips the picker for a widget pinned in the last
+  minute, instead of asking for a file the widget already has.
+- **`DocumentWidgets` is its own interface** in `AppServices`, like the
+  other platform services, so the editor is tested with a fake.
+
 ## 2026-10-26: Sub-app launcher and markdown editor
 
 The app had only a placeholder screen. It needs to hold many small

@@ -1,10 +1,19 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:logging/logging.dart';
 
 import '../documents/document.dart';
 import 'markdown_editor_controller.dart';
+
+final _log = Logger('markdown_editor');
+
+/// Shown when the home screen cannot add widgets for apps.
+const pinUnsupportedMessage =
+    'This home screen cannot add widgets from apps. Long-press the home '
+    'screen and add "Markdown file" from its widgets instead.';
 
 /// Edits [document], saving as you type, with a rendered preview.
 class MarkdownEditorPage extends StatefulWidget {
@@ -12,11 +21,13 @@ class MarkdownEditorPage extends StatefulWidget {
     super.key,
     required this.document,
     required this.store,
+    required this.widgets,
     this.saveDelay = const Duration(milliseconds: 750),
   });
 
   final Document document;
   final DocumentStore store;
+  final DocumentWidgets widgets;
   final Duration saveDelay;
 
   @override
@@ -48,6 +59,25 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
     super.dispose();
   }
 
+  Future<void> _pinWidget() async {
+    final String? message;
+    try {
+      message = await widget.widgets.pin(widget.document)
+          ? null
+          : pinUnsupportedMessage;
+    } on PlatformException catch (error, stackTrace) {
+      _log.warning('could not pin a widget', error, stackTrace);
+      if (!mounted) return;
+      _showMessage('Could not add the widget: ${error.message}');
+      return;
+    }
+    if (message != null && mounted) _showMessage(message);
+  }
+
+  void _showMessage(String message) =>
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -74,6 +104,11 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
                   icon: Icon(_preview ? Icons.edit : Icons.visibility),
                   onPressed: () => setState(() => _preview = !_preview),
                 ),
+              IconButton(
+                tooltip: 'Add widget to home screen',
+                icon: const Icon(Icons.add_to_home_screen),
+                onPressed: _pinWidget,
+              ),
             ],
           ),
           body: switch (status) {

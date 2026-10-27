@@ -9,8 +9,12 @@ const delay = Duration(milliseconds: 500);
 
 void main() {
   late FakeDocumentStore store;
+  late FakeDocumentWidgets widgets;
 
-  setUp(() => store = FakeDocumentStore(files: {notes.uri: '# Title'}));
+  setUp(() {
+    store = FakeDocumentStore(files: {notes.uri: '# Title'});
+    widgets = FakeDocumentWidgets();
+  });
 
   Future<void> pumpEditor(WidgetTester tester) async {
     await tester.pumpWidget(
@@ -18,6 +22,7 @@ void main() {
         home: MarkdownEditorPage(
           document: notes,
           store: store,
+          widgets: widgets,
           saveDelay: delay,
         ),
       ),
@@ -66,5 +71,27 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pump();
     expect(find.text('# Title'), findsOneWidget);
+  });
+
+  testWidgets('adds a home screen widget for the file', (tester) async {
+    await pumpEditor(tester);
+
+    await tester.tap(find.byTooltip('Add widget to home screen'));
+    await tester.pump();
+
+    expect(widgets.pinned, [notes]);
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('explains when the home screen cannot add widgets', (
+    tester,
+  ) async {
+    widgets.supported = false;
+    await pumpEditor(tester);
+
+    await tester.tap(find.byTooltip('Add widget to home screen'));
+    await tester.pump();
+
+    expect(find.text(pinUnsupportedMessage), findsOneWidget);
   });
 }
