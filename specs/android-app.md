@@ -13,8 +13,20 @@
 
 - Material 3, with light and dark themes that follow the system setting.
 - Screens take the full screen (see [design/ui.md](../design/ui.md)).
-- The first screen shows the app title and "Hello, world!". Utilities
-  will replace it.
+- The first screen is the launcher: a grid with one tile per sub-app
+  (icon, title and a one-line description). Tapping a tile opens the
+  sub-app full screen; back returns to the grid.
+
+## Sub-apps
+
+- Each utility is a sub-app, listed once in `lib/src/sub_apps.dart`, in
+  launcher order. A sub-app has a stable `id`, a title, a description, an
+  icon and a builder for its first screen.
+- Sub-apps get platform services (file access, preferences) from
+  `AppServices`, so they can be tested with fakes.
+- Sub-apps:
+  - Markdown: open, create and live-edit a markdown file, with a 1x1 home
+    screen widget per file (see [markdown-editor.md](markdown-editor.md)).
 
 ## Logging
 

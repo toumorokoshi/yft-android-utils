@@ -17,6 +17,18 @@ just run                 # the only connected device
 just run emulator-5554   # a specific device
 ```
 
+## Home screen widget
+
+The app has a 1x1 "Markdown file" widget. To add one, long-press the home
+screen, choose **Widgets**, find **yft android utils** and drag **Markdown
+file** onto the screen. The system file picker opens; the file you choose
+is the one the widget opens. Place one widget per file.
+
+The widget only stores the file's URI; the app keeps access to it through
+a persisted Storage Access Framework permission. If the permission is
+revoked, a tap opens the app on the launcher; if the file was moved or
+deleted, the editor says it could not open the file.
+
 ## Building
 
 `just apk` runs [`scripts/package-android`](../scripts/package-android),

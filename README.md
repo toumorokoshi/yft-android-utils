@@ -2,8 +2,13 @@
 
 An Android app (Flutter/Dart) for personal utilities.
 
-> Status: a hello-world app with CI, linting and tests. No utilities are
-> built yet; see [GAPS.md](GAPS.md).
+The home screen is a grid of sub-apps. So far there is one:
+
+- **Markdown**: open or create a markdown file on the device and edit it,
+  with autosave and a rendered preview. A 1x1 home screen widget opens a
+  chosen file straight in the editor.
+
+See [GAPS.md](GAPS.md) for work not yet done.
 
 ## Layout
 
@@ -22,7 +27,10 @@ can be split out of `app/` later without changing the tooling.
 - [docs/architecture.md](docs/architecture.md): how the code is organized.
 - [docs/android.md](docs/android.md): building, running and signing the
   APK.
-- [specs/android-app.md](specs/android-app.md): app requirements.
+- [specs/android-app.md](specs/android-app.md): app requirements and the
+  sub-app launcher.
+- [specs/markdown-editor.md](specs/markdown-editor.md): the markdown
+  editor and its home screen widget.
 - [specs/linting.md](specs/linting.md): linting, formatting and tests.
 - [GAPS.md](GAPS.md): open questions and work not yet done.
 - [DESIGN-DECISION-LOG.md](DESIGN-DECISION-LOG.md): design decisions, by date.

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A 1x1 widget. The configure activity picks its file when it is placed. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="dev.yft.yft_android_utils.MarkdownWidgetConfigureActivity"
+    android:description="@string/markdown_widget_description"
+    android:initialLayout="@layout/markdown_widget"
+    android:minWidth="40dp"
+    android:minHeight="40dp"
+    android:previewLayout="@layout/markdown_widget"
+    android:resizeMode="none"
+    android:targetCellWidth="1"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />

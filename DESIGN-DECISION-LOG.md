@@ -1,5 +1,46 @@
 # Design Decision Log
 
+## 2026-10-26: Sub-app launcher and markdown editor
+
+The app had only a placeholder screen. It needs to hold many small
+utilities, starting with editing a markdown file on the phone, opened
+either from the app or from a 1x1 home screen widget.
+
+- **A launcher grid of `SubApp`s.** Each utility is a `SubApp` (id,
+  title, description, icon, first screen) in one list,
+  `buildSubApps`. Adding a utility is one folder and one list entry, and
+  the grid needs no changes.
+- **Platform access behind interfaces in `AppServices`.** `DocumentStore`,
+  `DocumentLaunches` and `RecentDocuments` are interfaces; `main` passes
+  the platform ones and tests pass in-memory fakes, so widget tests do not
+  mock channels.
+- **The Storage Access Framework, not file paths.** Since Android 11,
+  apps cannot write arbitrary paths without the "all files access"
+  permission. The system picker works with every provider, needs no
+  permission, and a persisted URI permission lets the widget reopen the
+  file after restarts.
+- **A small Kotlin channel instead of SAF plugins.** `saf_util` and
+  `saf_stream` were considered, but `saf_util`'s file picker does not take
+  a persisted permission, so access would end at the next restart. The
+  widget needs native picker code anyway, so one `Documents` helper serves
+  both the channel and the widget.
+- **A native widget instead of `home_widget`.** `home_widget` 0.10 builds
+  with the Kotlin 1.9 Gradle plugin and Glance, which risks breaking the
+  AGP 9 build, and its value here (launch URIs into Flutter) is a few
+  lines on the existing channel. The widget is a classic
+  `AppWidgetProvider` with `RemoteViews`, and placing it runs a
+  configure activity that shows the picker natively, without starting
+  Flutter.
+- **Autosave, debounced and queued.** The editor saves 750 ms after the
+  last keystroke, when the app is hidden and when the editor closes.
+  Writes go through one queue in Dart and one background thread in
+  Kotlin, so an older save can never land after a newer one.
+- **Only persisted URIs are opened from intents.** `MainActivity` is
+  exported, so other apps can send it the open action; it ignores URIs the
+  user did not pick, so it cannot be made to write another app's files.
+- **`flutter_markdown_plus` for the preview.** `flutter_markdown` is
+  discontinued; `flutter_markdown_plus` is its maintained fork.
+
 ## 2026-10-26: Gaps in GAPS.md, not an issue tracker
 
 `AGENTS.md` asked agents to file issues with the `bd` (beads) CLI, which

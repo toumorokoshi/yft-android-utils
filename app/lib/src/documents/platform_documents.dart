@@ -1,0 +1,61 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
+
+import 'document.dart';
+
+final _log = Logger('documents');
+
+/// The channel served by `DocumentsChannel.kt` in the Android app.
+const documentsChannel = MethodChannel('dev.yft.yft_android_utils/documents');
+
+/// [DocumentStore] and [DocumentLaunches] backed by the Android Storage
+/// Access Framework, through [documentsChannel].
+class PlatformDocuments implements DocumentStore, DocumentLaunches {
+  PlatformDocuments({this._channel = documentsChannel}) {
+    _channel.setMethodCallHandler(_handle);
+  }
+
+  final MethodChannel _channel;
+  final _opened = StreamController<Document>.broadcast();
+
+  Future<Object?> _handle(MethodCall call) async {
+    if (call.method != 'openDocument') {
+      throw MissingPluginException('unknown method ${call.method}');
+    }
+    final document = _toDocument(call.arguments);
+    if (document != null) {
+      _log.info('asked to open $document');
+      _opened.add(document);
+    }
+    return null;
+  }
+
+  Document? _toDocument(Object? value) =>
+      value is Map ? Document.fromMap(value) : null;
+
+  @override
+  Future<Document?> pick() async =>
+      _toDocument(await _channel.invokeMethod<Object?>('pick'));
+
+  @override
+  Future<Document?> create(String suggestedName) async => _toDocument(
+    await _channel.invokeMethod<Object?>('create', {'name': suggestedName}),
+  );
+
+  @override
+  Future<String> read(Document document) async =>
+      await _channel.invokeMethod<String>('read', {'uri': document.uri}) ?? '';
+
+  @override
+  Future<void> write(Document document, String text) =>
+      _channel.invokeMethod<void>('write', {'uri': document.uri, 'text': text});
+
+  @override
+  Future<Document?> initial() async =>
+      _toDocument(await _channel.invokeMethod<Object?>('initialDocument'));
+
+  @override
+  Stream<Document> get opened => _opened.stream;
+}

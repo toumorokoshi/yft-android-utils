@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="markdown_widget_label">Markdown file</string>
+    <string name="markdown_widget_description">Opens a markdown file for editing</string>
+    <string name="markdown_widget_unset">No file</string>
+</resources>
