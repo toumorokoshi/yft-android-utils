@@ -52,6 +52,7 @@ below the root folder (`work/meeting-notes.md`):
   letter.
 - Among the ways a term can match, the best-scoring one is used. Matches
   score higher:
+
   - at the start of the path or of a path segment (after `/`),
   - at the start of a word (after `-`, `_`, `.` or a space),
   - on a camelCase hump,
