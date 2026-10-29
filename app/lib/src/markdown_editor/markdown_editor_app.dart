@@ -8,6 +8,7 @@ import '../launcher/sub_app.dart';
 import '../services.dart';
 import 'markdown_editor_page.dart';
 import 'markdown_files_page.dart';
+import 'quick_open_button.dart';
 
 final _log = Logger('markdown_editor');
 
@@ -46,6 +47,7 @@ Future<void> openMarkdownEditor(
       document: document,
       store: services.documents,
       widgets: services.widgets,
+      actions: [QuickOpenButton(services: services)],
     ),
   );
   return aboveLauncher

@@ -23,12 +23,16 @@ class MarkdownEditorPage extends StatefulWidget {
     required this.store,
     required this.widgets,
     this.saveDelay = const Duration(milliseconds: 750),
+    this.actions = const [],
   });
 
   final Document document;
   final DocumentStore store;
   final DocumentWidgets widgets;
   final Duration saveDelay;
+
+  /// App bar buttons shown before the editor's own, such as quick open.
+  final List<Widget> actions;
 
   @override
   State<MarkdownEditorPage> createState() => _MarkdownEditorPageState();
@@ -98,6 +102,7 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
               ],
             ),
             actions: [
+              ...widget.actions,
               if (_controller.isLoaded)
                 IconButton(
                   tooltip: _preview ? 'Edit' : 'Preview',

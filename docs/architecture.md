@@ -8,8 +8,9 @@
   seeded from indigo). Its home is the launcher, and it opens documents
   sent from home screen widgets in the markdown editor.
 - `app/lib/src/services.dart`: `AppServices`, the platform-backed
-  dependencies (documents, launch documents, recent files) handed to
-  sub-apps.
+  dependencies (documents, folders, launch documents, recent files, the
+  root folder, widgets) handed to sub-apps, plus the session's
+  `FolderIndex`.
 - `app/lib/src/sub_apps.dart`: the list of sub-apps, in launcher order.
 - `app/lib/src/launcher/`: `SubApp` (one utility's id, title, icon and
   first screen) and `LauncherPage`, the grid of sub-app tiles.
@@ -17,16 +18,31 @@
   - `document.dart`: the `Document` model (a `content://` URI and a name)
     and the `DocumentStore`, `DocumentLaunches` and `DocumentWidgets`
     interfaces.
-  - `platform_documents.dart`: all three interfaces over the
-    `dev.yft.yft_android_utils/documents` method channel.
+  - `folder.dart`: `FolderFile` (a file and its path below a folder), the
+    `FolderStore` interface (pick a folder, list its files) and
+    `FolderIndex`, the in-memory cache of listings.
+  - `platform_documents.dart`: the document, folder, launch and widget
+    interfaces over the `dev.yft.yft_android_utils/documents` method
+    channel.
   - `recent_documents.dart`: pure functions for the recent-files list,
     and `SharedPreferencesRecentDocuments`, which stores it.
+  - `root_folder.dart`: the `RootFolder` interface, its shared
+    preferences store, and `chooseRootFolder`.
+- `app/lib/src/quick_open/`: finding a file in the root folder, with no
+  dependency on any sub-app.
+  - `fuzzy_match.dart`: pure functions: `fuzzyMatch`, the fzf-style
+    scorer, and `rankFiles`, which sorts a listing for a query.
+  - `quick_open_page.dart`: the search page, `showQuickOpen`, and
+    `highlightSpans` for the matched characters.
 - `app/lib/src/markdown_editor/`: the markdown sub-app.
   - `markdown_editor_app.dart`: its `SubApp` and `openMarkdownEditor`.
   - `markdown_files_page.dart`: open, create or reopen a file.
   - `markdown_editor_controller.dart`: the editor state: loading, the
     debounced autosave and the save status.
   - `markdown_editor_page.dart`: the editor and preview.
+  - `quick_open_button.dart`: the app bar button that runs quick open and
+    opens the chosen file in the editor. The launcher, the files page and
+    the editor show it.
 - `app/lib/src/logging.dart`: `formatLogRecord`, a pure formatter, and
   `setUpLogging`, which routes `package:logging` records to
   `dart:developer` (shown by `flutter run`, DevTools and `adb logcat`).
@@ -41,12 +57,13 @@
 
 In `app/android/app/src/main/kotlin/dev/yft/yft_android_utils/`:
 
-- `Documents.kt`: Storage Access Framework helpers (picker intents,
-  persisted permissions, display names, reading and writing), shared by
-  the channel and the widget.
+- `Documents.kt`: Storage Access Framework helpers (file and folder
+  picker intents, persisted permissions, display names, listing a folder
+  tree, reading and writing), shared by the channel and the widget.
 - `DocumentsChannel.kt`: serves the documents method channel. Pickers run
   through `MainActivity`'s activity results; reads and writes run on one
-  background thread, so writes stay in order. It also sends documents from
+  background thread, so writes stay in order, and folder listings on
+  another, so they do not delay saves. It also sends documents from
   widget taps to Dart: `initialDocument` for a cold start and an
   `openDocument` call for a tap while the app runs.
 - `MainActivity.kt`: creates the channel and forwards new intents and

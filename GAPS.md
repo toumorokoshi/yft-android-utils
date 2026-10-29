@@ -58,3 +58,37 @@ screen widget per file.
   file with mode `"wt"`; a provider that rejects it shows a save error.
 - **Recent files are not pruned** when their file is deleted or the
   permission is lost; opening one shows the load error.
+
+## Quick open
+
+Iteration 3 (2026-10-28) added a saved root folder and a quick open page
+with fzf-style fuzzy matching, reached from the app bars.
+
+- **Not tried on a device.** The folder picker, the tree listing and
+  opening, saving and pinning files found through the folder grant were
+  only compiled, not run. Providers differ in how they handle tree URIs;
+  the local storage and Google Drive providers are the ones to check
+  first.
+- **Every file is listed, not just markdown.** Opening an image or other
+  binary file shows it as text, and saving would overwrite it. Quick open
+  could filter by extension or MIME type, or the editor could refuse
+  non-text files.
+- **Listing is re-run on every open.** The cached list shows at once, but
+  each open lists the whole tree again, one provider query per folder. A
+  large tree on a slow provider (such as a cloud drive) costs time and
+  battery. The listing could be kept between sessions, refreshed only
+  when older than some age, or limited to changed folders.
+- **The 20,000-file limit is silent.** A larger folder is cut off without
+  saying so.
+- **Large listings rank on the UI thread.** Each keystroke scores every
+  file on the main isolate; tens of thousands of files may stutter.
+  Ranking could move to an isolate (`compute`), or the query could be
+  debounced.
+- **Changing the folder keeps the old grant**, adding to the persisted
+  permissions gap above. The old tree's grant can only be released once
+  no recent file or widget uses a file below it.
+- **One root folder.** Several roots, or switching between saved ones,
+  are not supported.
+- **Quick open always lands above the launcher.** Opening from the files
+  page closes it, so back from the editor goes to the launcher rather
+  than the files page.

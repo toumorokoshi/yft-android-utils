@@ -6,6 +6,7 @@ import 'package:logging/logging.dart';
 import 'documents/document.dart';
 import 'launcher/launcher_page.dart';
 import 'markdown_editor/markdown_editor_app.dart';
+import 'markdown_editor/quick_open_button.dart';
 import 'services.dart';
 import 'sub_apps.dart';
 
@@ -77,7 +78,11 @@ class _AppState extends State<App> {
         colorSchemeSeed: Colors.indigo,
         brightness: Brightness.dark,
       ),
-      home: LauncherPage(title: appTitle, subApps: _subApps),
+      home: LauncherPage(
+        title: appTitle,
+        subApps: _subApps,
+        actions: [QuickOpenButton(services: widget.services)],
+      ),
     );
   }
 }

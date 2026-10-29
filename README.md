@@ -8,6 +8,9 @@ The home screen is a grid of sub-apps. So far there is one:
   with autosave and a rendered preview. A 1x1 home screen widget opens a
   chosen file straight in the editor.
 
+A quick open button in the top bar finds a file in a saved top-level
+folder with fuzzy, fzf-style matching.
+
 See [GAPS.md](GAPS.md) for work not yet done.
 
 ## Layout
@@ -31,6 +34,8 @@ can be split out of `app/` later without changing the tooling.
   sub-app launcher.
 - [specs/markdown-editor.md](specs/markdown-editor.md): the markdown
   editor and its home screen widget.
+- [specs/quick-open.md](specs/quick-open.md): the root folder and quick
+  open's fuzzy file search.
 - [specs/linting.md](specs/linting.md): linting, formatting and tests.
 - [GAPS.md](GAPS.md): open questions and work not yet done.
 - [DESIGN-DECISION-LOG.md](DESIGN-DECISION-LOG.md): design decisions, by date.

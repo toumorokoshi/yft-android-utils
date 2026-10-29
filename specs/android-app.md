@@ -16,6 +16,8 @@
 - The first screen is the launcher: a grid with one tile per sub-app
   (icon, title and a one-line description). Tapping a tile opens the
   sub-app full screen; back returns to the grid.
+- The launcher's app bar has a quick open button that finds a file in the
+  saved root folder (see [quick-open.md](quick-open.md)).
 
 ## Sub-apps
 

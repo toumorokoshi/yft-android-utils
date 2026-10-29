@@ -15,8 +15,12 @@ A sub-app that edits one markdown file on the device, saving as you type.
     providers report markdown under different MIME types.
   - **New file**: create a file, named `notes.md` by default, with the
     system "save as" picker.
+  - **Folder**: the root folder [quick open](quick-open.md) searches, with
+    a button to choose or change it.
   - **Recent**: the last 10 files opened, newest first. Tapping one opens
     it.
+- The app bars of the first screen and the editor have a quick open
+  button (see [quick-open.md](quick-open.md)).
 
 ## Editing
 
@@ -48,5 +52,6 @@ A sub-app that edits one markdown file on the device, saving as you type.
   the widget holds: it survives restarts, reboots and app updates, and
   ends when the app is uninstalled or its data is cleared, the permission
   is revoked, or the file is moved or deleted.
-- The app only opens files it holds a persisted permission for, so other
-  apps cannot use the widget's intent to make it write to their files.
+- The app only opens files it holds a persisted permission for, either
+  for the file or for the root folder it was found in, so other apps
+  cannot use the widget's intent to make it write to their files.

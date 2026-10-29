@@ -8,20 +8,25 @@ import android.os.Looper
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
  * Serves `dev.yft.yft_android_utils/documents` (lib/src/documents/platform_documents.dart).
  * File access runs on one background thread, so writes reach a file in the order Dart sent
- * them.
+ * them. Folder listings run on another, so a large folder does not hold up saves.
  */
 class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenger) :
     MethodChannel.MethodCallHandler {
+    /** A picker waiting for its activity result; [describe] turns the chosen URI into a reply. */
+    private class PendingPick(val result: MethodChannel.Result, val describe: (Uri) -> Any?)
+
     private val channel = MethodChannel(messenger, NAME)
     private val io = Executors.newSingleThreadExecutor()
+    private val listing = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val context = activity.applicationContext
-    private var pendingPick: MethodChannel.Result? = null
+    private var pendingPick: PendingPick? = null
     private var initialDocumentSent = false
 
     init {
@@ -30,9 +35,22 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "pick" -> startPicker(Documents.openIntent(), result)
+            "pick" -> startPicker(Documents.openIntent(), result, ::describeFile)
             "create" ->
-                startPicker(Documents.createIntent(call.argument<String>("name") ?: "notes.md"), result)
+                startPicker(
+                    Documents.createIntent(call.argument<String>("name") ?: "notes.md"),
+                    result,
+                    ::describeFile,
+                )
+            "pickFolder" ->
+                startPicker(Documents.openTreeIntent(), result) { uri ->
+                    Documents.persist(context, uri)
+                    Documents.describeTree(context, uri)
+                }
+            "listFolder" ->
+                onIo(result, listing) {
+                    Documents.listTree(context, uriArgument(call), MAX_LISTED_FILES)
+                }
             "read" -> onIo(result) { Documents.read(context, uriArgument(call)) }
             "write" ->
                 onIo(result) {
@@ -67,16 +85,13 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
     /** Returns true when the result was for a picker this channel started. */
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         if (requestCode != REQUEST_PICK) return false
-        val result = pendingPick ?: return true
+        val pick = pendingPick ?: return true
         pendingPick = null
         val uri = data?.data
         if (resultCode != Activity.RESULT_OK || uri == null) {
-            result.success(null)
+            pick.result.success(null)
         } else {
-            onIo(result) {
-                Documents.persist(context, uri)
-                Documents.describe(context, uri)
-            }
+            onIo(pick.result) { pick.describe(uri) }
         }
         return true
     }
@@ -84,6 +99,12 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
     fun dispose() {
         channel.setMethodCallHandler(null)
         io.shutdown()
+        listing.shutdownNow()
+    }
+
+    private fun describeFile(uri: Uri): Map<String, String> {
+        Documents.persist(context, uri)
+        return Documents.describe(context, uri)
     }
 
     /**
@@ -96,20 +117,28 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
         return if (Documents.isPersisted(context, uri)) Documents.describe(context, uri) else null
     }
 
-    private fun startPicker(intent: Intent, result: MethodChannel.Result) {
+    private fun startPicker(
+        intent: Intent,
+        result: MethodChannel.Result,
+        describe: (Uri) -> Any?,
+    ) {
         if (pendingPick != null) {
             result.error("busy", "a file picker is already open", null)
             return
         }
-        pendingPick = result
+        pendingPick = PendingPick(result, describe)
         activity.startActivityForResult(intent, REQUEST_PICK)
     }
 
     private fun uriArgument(call: MethodCall): Uri =
         Uri.parse(call.argument<String>("uri") ?: throw IllegalArgumentException("missing uri"))
 
-    private fun onIo(result: MethodChannel.Result, work: () -> Any?) {
-        io.execute {
+    private fun onIo(
+        result: MethodChannel.Result,
+        executor: ExecutorService = io,
+        work: () -> Any?,
+    ) {
+        executor.execute {
             try {
                 val value = work()
                 main.post { result.success(value) }
@@ -122,5 +151,6 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
     private companion object {
         const val NAME = "dev.yft.yft_android_utils/documents"
         const val REQUEST_PICK = 0x4d44
+        const val MAX_LISTED_FILES = 20_000
     }
 }

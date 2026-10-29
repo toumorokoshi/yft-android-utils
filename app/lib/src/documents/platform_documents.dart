@@ -4,16 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 import 'document.dart';
+import 'folder.dart';
 
 final _log = Logger('documents');
 
 /// The channel served by `DocumentsChannel.kt` in the Android app.
 const documentsChannel = MethodChannel('dev.yft.yft_android_utils/documents');
 
-/// [DocumentStore], [DocumentLaunches] and [DocumentWidgets] backed by the
-/// Android Storage Access Framework, through [documentsChannel].
+/// [DocumentStore], [FolderStore], [DocumentLaunches] and [DocumentWidgets]
+/// backed by the Android Storage Access Framework, through
+/// [documentsChannel].
 class PlatformDocuments
-    implements DocumentStore, DocumentLaunches, DocumentWidgets {
+    implements DocumentStore, FolderStore, DocumentLaunches, DocumentWidgets {
   PlatformDocuments({this._channel = documentsChannel}) {
     _channel.setMethodCallHandler(_handle);
   }
@@ -44,6 +46,21 @@ class PlatformDocuments
   Future<Document?> create(String suggestedName) async => _toDocument(
     await _channel.invokeMethod<Object?>('create', {'name': suggestedName}),
   );
+
+  @override
+  Future<Document?> pickFolder() async =>
+      _toDocument(await _channel.invokeMethod<Object?>('pickFolder'));
+
+  @override
+  Future<List<FolderFile>> list(Document folder) async {
+    final files = await _channel.invokeListMethod<Object?>('listFolder', {
+      'uri': folder.uri,
+    });
+    return [
+      for (final file in files ?? const <Object?>[])
+        if (file is Map) ?FolderFile.fromMap(file),
+    ];
+  }
 
   @override
   Future<String> read(Document document) async =>

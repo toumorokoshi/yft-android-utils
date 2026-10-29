@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:yft_android_utils/src/documents/document.dart';
+import 'package:yft_android_utils/src/documents/folder.dart';
 import 'package:yft_android_utils/src/documents/recent_documents.dart';
+import 'package:yft_android_utils/src/documents/root_folder.dart';
 import 'package:yft_android_utils/src/services.dart';
 
 const notes = Document(uri: 'content://docs/notes', name: 'notes.md');
@@ -77,14 +80,63 @@ class FakeDocumentWidgets implements DocumentWidgets {
   }
 }
 
+const notesFolder = Document(uri: 'content://docs/tree/notes', name: 'Notes');
+const workFolder = Document(uri: 'content://docs/tree/work', name: 'Work');
+
+/// A file named [path]'s last segment, with a URI derived from [path].
+FolderFile folderFile(String path) => FolderFile(
+  document: Document(
+    uri: 'content://docs/tree/notes/document/$path',
+    name: path.split('/').last,
+  ),
+  path: path,
+);
+
+/// Folders whose listings are [files], keyed by folder URI. Throws on
+/// [list] when [failLists] is set.
+class FakeFolderStore implements FolderStore {
+  FakeFolderStore({Map<String, List<FolderFile>>? files}) : files = {...?files};
+
+  final Map<String, List<FolderFile>> files;
+  Document? picked;
+  bool failLists = false;
+  int lists = 0;
+
+  @override
+  Future<Document?> pickFolder() async => picked;
+
+  @override
+  Future<List<FolderFile>> list(Document folder) async {
+    lists++;
+    if (failLists) throw PlatformException(code: 'io', message: 'list failed');
+    return files[folder.uri] ?? const [];
+  }
+}
+
+class FakeRootFolder implements RootFolder {
+  FakeRootFolder([this.folder]);
+
+  Document? folder;
+
+  @override
+  Future<Document?> load() async => folder;
+
+  @override
+  Future<void> save(Document folder) async => this.folder = folder;
+}
+
 AppServices fakeServices({
   FakeDocumentStore? documents,
+  FakeFolderStore? folders,
   FakeDocumentLaunches? launches,
   FakeRecentDocuments? recents,
+  FakeRootFolder? rootFolder,
   FakeDocumentWidgets? widgets,
 }) => AppServices(
   documents: documents ?? FakeDocumentStore(),
+  folders: folders ?? FakeFolderStore(),
   launches: launches ?? FakeDocumentLaunches(),
   recents: recents ?? FakeRecentDocuments(),
+  rootFolder: rootFolder ?? FakeRootFolder(),
   widgets: widgets ?? FakeDocumentWidgets(),
 );

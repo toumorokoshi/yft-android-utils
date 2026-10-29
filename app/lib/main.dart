@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 import 'src/app.dart';
 import 'src/documents/platform_documents.dart';
 import 'src/documents/recent_documents.dart';
+import 'src/documents/root_folder.dart';
 import 'src/logging.dart';
 import 'src/services.dart';
 
@@ -18,8 +19,10 @@ void main() {
     App(
       services: AppServices(
         documents: documents,
+        folders: documents,
         launches: documents,
         recents: SharedPreferencesRecentDocuments(),
+        rootFolder: SharedPreferencesRootFolder(),
         widgets: documents,
       ),
     ),

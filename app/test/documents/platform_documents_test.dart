@@ -49,6 +49,31 @@ void main() {
     expect(calls.single.arguments, notes.toMap());
   });
 
+  test('pickFolder returns the chosen folder', () async {
+    messenger.setMockMethodCallHandler(
+      documentsChannel,
+      (call) async => notesFolder.toMap(),
+    );
+
+    expect(await documents.pickFolder(), notesFolder);
+  });
+
+  test('list passes the folder uri and skips malformed files', () async {
+    final file = folderFile('work/todo.md');
+    messenger.setMockMethodCallHandler(documentsChannel, (call) async {
+      calls.add(call);
+      return [
+        {...file.document.toMap(), 'path': file.path},
+        {'uri': 'missing-path', 'name': 'x'},
+        3,
+      ];
+    });
+
+    expect(await documents.list(notesFolder), [file]);
+    expect(calls.single.method, 'listFolder');
+    expect(calls.single.arguments, {'uri': notesFolder.uri});
+  });
+
   test('initial returns the launch document', () async {
     expect(await documents.initial(), notes);
   });
@@ -71,6 +96,8 @@ void main() {
     messenger.setMockMethodCallHandler(documentsChannel, (_) async => null);
 
     expect(await documents.pick(), isNull);
+    expect(await documents.pickFolder(), isNull);
+    expect(await documents.list(notesFolder), isEmpty);
     expect(await documents.initial(), isNull);
     expect(await documents.pin(notes), isFalse);
     expect(await documents.read(const Document(uri: 'u', name: 'n')), '');

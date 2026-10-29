@@ -1,5 +1,45 @@
 # Design Decision Log
 
+## 2026-10-28: Root folder and quick open
+
+Opening a file meant going through the system picker each time. Notes
+usually live under one folder, so the app now saves a top-level folder
+and finds files in it by typing part of the path.
+
+- **A folder tree grant, not per-file grants.** The folder is picked with
+  `ACTION_OPEN_DOCUMENT_TREE` and its grant persisted, so every file
+  below it can be read and written without picking it again. This keeps
+  the Storage Access Framework approach (no "all files access"
+  permission). `Documents.isPersisted` also accepts document URIs under a
+  granted tree, so widget taps and recents work for those files. The
+  provider checks that a tree document is below its tree, so this does
+  not widen access.
+- **A native recursive listing.** `DocumentsContract` child queries walk
+  the tree breadth first, on a separate thread from reads and writes so a
+  large scan never holds up a save. Hidden entries are skipped and the
+  listing is capped at 20,000 files.
+- **Cache, then refresh.** `FolderIndex` keeps each listing for the
+  session. Quick open shows it at once and lists again in the
+  background, trading some battery for never showing stale results for
+  long.
+- **An fzf-style matcher written here.** pub's fuzzy packages do not fit:
+  `fuzzy` is a Fuse.js (Bitap) port, and `fuzzywuzzy` and
+  `string_similarity` score whole-string similarity. None of them return
+  match positions or understand path segments. `fuzzyMatch` is a pure
+  Smith-Waterman style alignment like fzf's v2 algorithm: subsequence
+  matching with bonuses for path, word and camelCase starts, adjacency
+  and the file name, gap penalties, smart case and space-separated terms.
+  It returns positions for highlighting. It is about 150 lines and fully
+  unit tested.
+- **Quick open is generic, the button is not.** `quick_open/` returns a
+  `Document` and knows nothing about sub-apps. `QuickOpenButton` lives
+  with the markdown editor and opens the result there, above the
+  launcher, as widget taps do. The launcher and editor take an `actions`
+  list, so the button is added without them depending on it.
+- **The folder is a `Document`.** A tree URI and display name have the
+  same shape as a file, so the model, `fromMap` and storage code are
+  reused rather than adding a parallel `Folder` type.
+
 ## 2026-10-27: Release workflow for tagged APKs
 
 CI only uploaded the APK as a run artifact, so there was no stable place
