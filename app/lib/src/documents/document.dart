@@ -66,4 +66,7 @@ abstract interface class DocumentLaunches {
 
   /// Documents requested while the app is already running.
   Stream<Document> get opened;
+
+  /// Error messages when a launch request (such as a widget tap) fails.
+  Stream<String> get errors;
 }

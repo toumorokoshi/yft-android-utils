@@ -1,5 +1,27 @@
 # Design Decision Log
 
+## 2026-11-21: Re-resolve widget shortcuts via the Quick Open root folder
+
+When another app or sync client updates a file atomically (writing a temp
+file, deleting the original, and renaming), Android's Storage Access
+Framework can assign a new document ID or revoke the old URI's persisted
+permission, causing a home screen widget tap to fail silently.
+
+- **Store `(treeUri, relativePath)` per widget when available.** When a
+  widget is pinned or configured, `Documents.resolveTreePath` checks the
+  file's own tree (if opened from Quick Open) or any persisted folder
+  tree held by the app and records the tree URI and relative path in
+  `MarkdownWidgets`.
+- **Re-resolve on tap in `O(depth)` queries.** If the widget's stored
+  URI is no longer persisted or `Documents.documentExists` returns
+  false, `DocumentsChannel.launchDocument` walks only the relative
+  path's folder segments under the persisted tree (`findInTreeByPath`),
+  updates the widget to the new URI, and opens it.
+- **Surface launch errors explicitly.** `DocumentsChannel` now catches
+  exceptions on warm launches and reports failures via `initialDocument`
+  or `openDocumentFailed`, which `App` displays as a `SnackBar` instead
+  of silently falling back to the launcher.
+
 ## 2026-10-28: Root folder and quick open
 
 Opening a file meant going through the system picker each time. Notes

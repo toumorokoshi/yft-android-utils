@@ -42,16 +42,24 @@ class FakeDocumentStore implements DocumentStore {
 }
 
 class FakeDocumentLaunches implements DocumentLaunches {
-  FakeDocumentLaunches({this.initialDocument});
+  FakeDocumentLaunches({this.initialDocument, this.initialError});
 
   final Document? initialDocument;
+  final Exception? initialError;
   final controller = StreamController<Document>.broadcast();
+  final errorController = StreamController<String>.broadcast();
 
   @override
-  Future<Document?> initial() async => initialDocument;
+  Future<Document?> initial() async {
+    if (initialError != null) throw initialError!;
+    return initialDocument;
+  }
 
   @override
   Stream<Document> get opened => controller.stream;
+
+  @override
+  Stream<String> get errors => errorController.stream;
 }
 
 class FakeRecentDocuments implements RecentDocuments {

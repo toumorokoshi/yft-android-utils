@@ -1,10 +1,12 @@
 package dev.yft.yft_android_utils
 
 import android.app.Activity
+import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -20,6 +22,12 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
     MethodChannel.MethodCallHandler {
     /** A picker waiting for its activity result; [describe] turns the chosen URI into a reply. */
     private class PendingPick(val result: MethodChannel.Result, val describe: (Uri) -> Any?)
+
+    private sealed interface LaunchResult {
+        class Found(val document: Map<String, String>) : LaunchResult
+
+        class Failed(val message: String) : LaunchResult
+    }
 
     private val channel = MethodChannel(messenger, NAME)
     private val io = Executors.newSingleThreadExecutor()
@@ -57,18 +65,34 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
                     Documents.write(context, uriArgument(call), call.argument<String>("text") ?: "")
                     null
                 }
-            "pinWidget" ->
-                result.success(
-                    MarkdownWidgets.requestPin(
-                        context,
-                        uriArgument(call),
-                        call.argument<String>("name") ?: "",
-                    )
-                )
+            "pinWidget" -> {
+                val uri = uriArgument(call)
+                val name = call.argument<String>("name") ?: ""
+                listing.execute {
+                    val location = Documents.resolveTreePath(context, uri, MAX_LISTED_FILES)
+                    main.post {
+                        result.success(
+                            MarkdownWidgets.requestPin(
+                                context,
+                                uri,
+                                name,
+                                location?.first,
+                                location?.second,
+                            )
+                        )
+                    }
+                }
+            }
             "initialDocument" -> {
                 val intent = if (initialDocumentSent) null else activity.intent
                 initialDocumentSent = true
-                onIo(result) { intent?.let { launchDocument(it) } }
+                onIo(result) {
+                    when (val launched = intent?.let { launchDocument(it) }) {
+                        is LaunchResult.Found -> launched.document
+                        is LaunchResult.Failed -> throw IllegalStateException(launched.message)
+                        null -> null
+                    }
+                }
             }
             else -> result.notImplemented()
         }
@@ -77,8 +101,19 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
     /** Sends a document opened while the app is running, such as a widget tap, to Dart. */
     fun onNewIntent(intent: Intent) {
         io.execute {
-            val document = launchDocument(intent) ?: return@execute
-            main.post { channel.invokeMethod("openDocument", document) }
+            try {
+                when (val launched = launchDocument(intent)) {
+                    is LaunchResult.Found ->
+                        main.post { channel.invokeMethod("openDocument", launched.document) }
+                    is LaunchResult.Failed ->
+                        main.post { channel.invokeMethod("openDocumentFailed", launched.message) }
+                    null -> Unit
+                }
+            } catch (error: Exception) {
+                Log.w(TAG, "could not open launch document", error)
+                val message = error.message ?: "Could not open the file."
+                main.post { channel.invokeMethod("openDocumentFailed", message) }
+            }
         }
     }
 
@@ -109,12 +144,48 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
 
     /**
      * The document [intent] asks to open, if it is one the user picked: other apps can send
-     * the same action to the exported activity, so only persisted URIs are accepted.
+     * the same action to the exported activity, so only persisted URIs are accepted. When a
+     * widget's original URI is stale or revoked, falls back to its saved relative path under the
+     * persisted Quick Open root folder and updates the widget to the new URI.
      */
-    private fun launchDocument(intent: Intent): Map<String, String>? {
+    private fun launchDocument(intent: Intent): LaunchResult? {
         val uri = intent.data
         if (intent.action != Documents.ACTION_OPEN || uri == null) return null
-        return if (Documents.isPersisted(context, uri)) Documents.describe(context, uri) else null
+        val widgetId =
+            intent.getIntExtra(
+                MarkdownWidgets.EXTRA_WIDGET_ID,
+                AppWidgetManager.INVALID_APPWIDGET_ID,
+            )
+        val target =
+            if (widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                MarkdownWidgets.find(context, widgetId)
+            } else {
+                MarkdownWidgets.findByUri(context, uri)
+            }
+        if (Documents.isPersisted(context, uri) && Documents.documentExists(context, uri)) {
+            return LaunchResult.Found(Documents.describe(context, uri))
+        }
+        val treeUri = target?.treeUri ?: Documents.treeOf(uri)
+        val path = target?.path
+        if (treeUri != null && path != null && Documents.isPersisted(context, treeUri)) {
+            val resolved = Documents.findInTreeByPath(context, treeUri, path)
+            if (resolved != null && Documents.documentExists(context, resolved)) {
+                val name = Documents.displayName(context, resolved)
+                if (target != null) {
+                    MarkdownWidgets.save(context, target.widgetId, resolved, name, treeUri, path)
+                    MarkdownWidgets.update(
+                        context,
+                        AppWidgetManager.getInstance(context),
+                        target.widgetId,
+                    )
+                }
+                return LaunchResult.Found(mapOf("uri" to resolved.toString(), "name" to name))
+            }
+        }
+        val name = target?.name ?: uri.lastPathSegment ?: "document"
+        return LaunchResult.Failed(
+            "Could not open \"$name\". It may have been moved, deleted, or its permission was revoked."
+        )
     }
 
     private fun startPicker(
@@ -149,6 +220,7 @@ class DocumentsChannel(private val activity: Activity, messenger: BinaryMessenge
     }
 
     private companion object {
+        const val TAG = "DocumentsChannel"
         const val NAME = "dev.yft.yft_android_utils/documents"
         const val REQUEST_PICK = 0x4d44
         const val MAX_LISTED_FILES = 20_000

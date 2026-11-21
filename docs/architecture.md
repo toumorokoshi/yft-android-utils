@@ -59,13 +59,16 @@ In `app/android/app/src/main/kotlin/dev/yft/yft_android_utils/`:
 
 - `Documents.kt`: Storage Access Framework helpers (file and folder
   picker intents, persisted permissions, display names, listing a folder
-  tree, reading and writing), shared by the channel and the widget.
+  tree, resolving and looking up relative paths under a tree, reading and
+  writing), shared by the channel and the widget.
 - `DocumentsChannel.kt`: serves the documents method channel. Pickers run
   through `MainActivity`'s activity results; reads and writes run on one
   background thread, so writes stay in order, and folder listings on
   another, so they do not delay saves. It also sends documents from
   widget taps to Dart: `initialDocument` for a cold start and an
-  `openDocument` call for a tap while the app runs.
+  `openDocument` call for a tap while the app runs (or an error via
+  `initialDocument` / `openDocumentFailed` if the file cannot be
+  opened or re-resolved).
 - `MainActivity.kt`: creates the channel and forwards new intents and
   activity results to it.
 - `MarkdownWidget.kt`: the 1x1 widget. `MarkdownWidgetProvider` draws it,
@@ -73,8 +76,9 @@ In `app/android/app/src/main/kotlin/dev/yft/yft_android_utils/`:
   the widget list, `MarkdownWidgets.requestPin` asks the home screen to add
   one for a file (the editor's "add widget" button),
   `MarkdownWidgetPinnedReceiver` binds the file once that widget is
-  placed, and `MarkdownWidgets` stores each widget's file in shared
-  preferences.
+  placed, and `MarkdownWidgets` stores each widget's file (and, when
+  under a persisted root folder, its tree URI and relative path) in
+  shared preferences.
 
 The widget's layout, drawables, strings and provider info are in
 `app/android/app/src/main/res/`.

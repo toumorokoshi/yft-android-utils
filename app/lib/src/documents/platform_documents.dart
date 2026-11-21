@@ -22,15 +22,24 @@ class PlatformDocuments
 
   final MethodChannel _channel;
   final _opened = StreamController<Document>.broadcast();
+  final _errors = StreamController<String>.broadcast();
 
   Future<Object?> _handle(MethodCall call) async {
-    if (call.method != 'openDocument') {
-      throw MissingPluginException('unknown method ${call.method}');
-    }
-    final document = _toDocument(call.arguments);
-    if (document != null) {
-      _log.info('asked to open $document');
-      _opened.add(document);
+    switch (call.method) {
+      case 'openDocument':
+        final document = _toDocument(call.arguments);
+        if (document != null) {
+          _log.info('asked to open $document');
+          _opened.add(document);
+        }
+      case 'openDocumentFailed':
+        final message = call.arguments;
+        if (message is String && message.isNotEmpty) {
+          _log.warning('launch document failed: $message');
+          _errors.add(message);
+        }
+      default:
+        throw MissingPluginException('unknown method ${call.method}');
     }
     return null;
   }
@@ -80,4 +89,7 @@ class PlatformDocuments
 
   @override
   Stream<Document> get opened => _opened.stream;
+
+  @override
+  Stream<String> get errors => _errors.stream;
 }

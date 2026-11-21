@@ -59,7 +59,7 @@ object Documents {
         return uri in granted || treeOf(uri)?.let { it in granted } == true
     }
 
-    private fun treeOf(uri: Uri): Uri? =
+    fun treeOf(uri: Uri): Uri? =
         if (DocumentsContract.isTreeUri(uri)) {
             DocumentsContract.buildTreeDocumentUri(
                 uri.authority,
@@ -67,6 +67,29 @@ object Documents {
             )
         } else {
             null
+        }
+
+    /** Persisted read+write folder tree URIs held by this app. */
+    fun persistedTreeUris(context: Context): List<Uri> =
+        context.contentResolver.persistedUriPermissions
+            .filter {
+                it.isReadPermission &&
+                    it.isWritePermission &&
+                    DocumentsContract.isTreeUri(it.uri)
+            }
+            .map { it.uri }
+
+    /**
+     * Whether [uri] currently resolves to a readable document row on its provider.
+     * Returns false when the file was deleted/replaced or the provider rejects access.
+     */
+    fun documentExists(context: Context, uri: Uri): Boolean =
+        try {
+            context.contentResolver
+                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { it.moveToFirst() } == true
+        } catch (_: Exception) {
+            false
         }
 
     /** The `{uri, name}` map for a folder tree from [openTreeIntent]. */
@@ -86,12 +109,86 @@ object Documents {
      */
     fun listTree(context: Context, treeUri: Uri, limit: Int): List<Map<String, String>> {
         val files = mutableListOf<Map<String, String>>()
+        walkTree(context, treeUri, limit) { id, name, path ->
+            val uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
+            files.add(mapOf("uri" to uri.toString(), "name" to name, "path" to path))
+            true
+        }
+        return files
+    }
+
+    /**
+     * Finds the `(treeUri, relativePath)` pair for [uri] using either its own tree or any
+     * persisted folder tree held by the app, up to [limit] files. Returns null if not found.
+     */
+    fun resolveTreePath(context: Context, uri: Uri, limit: Int): Pair<Uri, String>? {
+        val targetId =
+            try {
+                DocumentsContract.getDocumentId(uri)
+            } catch (_: IllegalArgumentException) {
+                return null
+            }
+        val candidates = treeOf(uri)?.let { listOf(it) } ?: persistedTreeUris(context)
+        for (treeUri in candidates) {
+            if (treeUri.authority != uri.authority) continue
+            var matchedPath: String? = null
+            walkTree(context, treeUri, limit) { id, _, path ->
+                if (id == targetId) {
+                    matchedPath = path
+                    false
+                } else {
+                    true
+                }
+            }
+            if (matchedPath != null) return treeUri to matchedPath!!
+        }
+        return null
+    }
+
+    /**
+     * Resolves [relativePath] (e.g. `work/notes.md`) below [treeUri] by walking only the path's
+     * folder segments. Returns null if any segment is missing or not a directory/file as expected.
+     */
+    fun findInTreeByPath(context: Context, treeUri: Uri, relativePath: String): Uri? {
+        val segments = relativePath.split('/').filter { it.isNotEmpty() }
+        if (segments.isEmpty()) return null
+        var folderId = DocumentsContract.getTreeDocumentId(treeUri)
+        for ((index, segment) in segments.withIndex()) {
+            val isLast = index == segments.lastIndex
+            val children = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, folderId)
+            var matchedId: String? = null
+            context.contentResolver.query(children, CHILD_COLUMNS, null, null, null)?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getString(0) ?: continue
+                    val name = cursor.getString(1) ?: continue
+                    if (name != segment) continue
+                    val isDir = cursor.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR
+                    if (isLast && !isDir || !isLast && isDir) {
+                        matchedId = id
+                        break
+                    }
+                }
+            }
+            val nextId = matchedId ?: return null
+            if (isLast) return DocumentsContract.buildDocumentUriUsingTree(treeUri, nextId)
+            folderId = nextId
+        }
+        return null
+    }
+
+    private inline fun walkTree(
+        context: Context,
+        treeUri: Uri,
+        limit: Int,
+        onFile: (id: String, name: String, path: String) -> Boolean,
+    ) {
+        var count = 0
         val folders = ArrayDeque(listOf(DocumentsContract.getTreeDocumentId(treeUri) to ""))
-        while (folders.isNotEmpty() && files.size < limit) {
+        while (folders.isNotEmpty() && count < limit) {
             val (folderId, prefix) = folders.removeFirst()
             val children = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, folderId)
             context.contentResolver.query(children, CHILD_COLUMNS, null, null, null)?.use { cursor ->
-                while (cursor.moveToNext() && files.size < limit) {
+                while (cursor.moveToNext() && count < limit) {
                     val id = cursor.getString(0)
                     val name = cursor.getString(1)
                     if (id != null && name != null && !name.startsWith(".")) {
@@ -99,14 +196,13 @@ object Documents {
                         if (cursor.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR) {
                             folders.addLast(id to "$path/")
                         } else {
-                            val uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
-                            files.add(mapOf("uri" to uri.toString(), "name" to name, "path" to path))
+                            count++
+                            if (!onFile(id, name, path)) return
                         }
                     }
                 }
             }
         }
-        return files
     }
 
     private val CHILD_COLUMNS =

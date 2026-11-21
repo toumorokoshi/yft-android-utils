@@ -92,6 +92,20 @@ void main() {
     expect(await opened, todo);
   });
 
+  test('openDocumentFailed calls from Android are sent to errors', () async {
+    final error = documents.errors.first;
+
+    await messenger.handlePlatformMessage(
+      documentsChannel.name,
+      documentsChannel.codec.encodeMethodCall(
+        const MethodCall('openDocumentFailed', 'Could not open "notes.md".'),
+      ),
+      (_) {},
+    );
+
+    expect(await error, 'Could not open "notes.md".');
+  });
+
   test('a cancelled pick returns null', () async {
     messenger.setMockMethodCallHandler(documentsChannel, (_) async => null);
 

@@ -54,6 +54,11 @@ screen widget per file.
   `releasePersistableUriPermission`.
 - **Widget names go stale.** The widget shows the file name from when it
   was placed; a renamed file keeps the old label until reconfigured.
+- **Widgets outside a persisted root folder cannot recover from atomic
+  replaces.** If another app deletes and recreates a file outside any
+  persisted Quick Open root folder (or on a provider whose single-file
+  document IDs differ from its tree document IDs), the widget shows an
+  error and must be reconfigured.
 - **Some providers may not support truncating writes.** Saves open the
   file with mode `"wt"`; a provider that rejects it shows a save error.
 - **Recent files are not pruned** when their file is deleted or the
