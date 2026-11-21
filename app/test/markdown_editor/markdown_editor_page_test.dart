@@ -94,4 +94,68 @@ void main() {
 
     expect(find.text(pinUnsupportedMessage), findsOneWidget);
   });
+
+  testWidgets('formatting ribbon inserts and toggles H1/H2/H3 headers', (
+    tester,
+  ) async {
+    store = FakeDocumentStore(files: {notes.uri: 'Heading'});
+    await pumpEditor(tester);
+
+    final editorFinder = find.byKey(const Key('markdown-editor'));
+    await tester.tap(editorFinder);
+    await tester.pump();
+    final field = tester.widget<TextField>(editorFinder);
+    field.controller!.selection = const TextSelection.collapsed(offset: 7);
+
+    await tester.tap(find.text('H1'));
+    await tester.pump();
+    expect(field.controller!.text, '# Heading');
+    expect(
+      field.controller!.selection,
+      const TextSelection.collapsed(offset: 9),
+    );
+    expect(FocusManager.instance.primaryFocus?.context?.widget, isNotNull);
+    expect(
+      find.ancestor(
+        of: find.byWidget(FocusManager.instance.primaryFocus!.context!.widget),
+        matching: editorFinder,
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('H2'));
+    await tester.pump();
+    expect(field.controller!.text, '## Heading');
+
+    await tester.tap(find.text('H3'));
+    await tester.pump();
+    expect(field.controller!.text, '### Heading');
+
+    await tester.tap(find.text('H3'));
+    await tester.pump();
+    expect(field.controller!.text, 'Heading');
+
+    // Triggers autosave after applying a heading.
+    await tester.tap(find.text('H2'));
+    await tester.pump();
+    expect(find.text('Editing…'), findsOneWidget);
+    await tester.pump(delay);
+    await tester.pump();
+    expect(store.files[notes.uri], '## Heading');
+    expect(find.text('Saved'), findsOneWidget);
+  });
+
+  testWidgets('hides the formatting ribbon in preview mode', (tester) async {
+    await pumpEditor(tester);
+
+    expect(find.byKey(const Key('formatting-ribbon')), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Preview'));
+    await tester.pump();
+    expect(find.byKey(const Key('formatting-ribbon')), findsNothing);
+
+    await tester.tap(find.byTooltip('Edit'));
+    await tester.pump();
+    expect(find.byKey(const Key('formatting-ribbon')), findsOneWidget);
+  });
 }

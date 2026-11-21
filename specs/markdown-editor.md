@@ -33,6 +33,10 @@ A sub-app that edits one markdown file on the device, saving as you type.
   is retried on the next edit.
 - A toggle switches between the editor and a rendered, selectable preview
   (`flutter_markdown_plus`).
+- While editing, a horizontal formatting ribbon at the bottom of the page
+  (above the soft keyboard when open) offers **H1**, **H2** and **H3**
+  buttons that set or toggle the current line's heading level without
+  dismissing the keyboard.
 
 ## Home screen widget
 

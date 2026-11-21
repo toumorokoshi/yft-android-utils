@@ -39,7 +39,10 @@
   - `markdown_files_page.dart`: open, create or reopen a file.
   - `markdown_editor_controller.dart`: the editor state: loading, the
     debounced autosave and the save status.
-  - `markdown_editor_page.dart`: the editor and preview.
+  - `markdown_editor_page.dart`: the editor, bottom formatting ribbon and
+    preview.
+  - `markdown_formatting.dart`: pure functions for markdown formatting
+    edits (such as `applyHeading`).
   - `quick_open_button.dart`: the app bar button that runs quick open and
     opens the chosen file in the editor. The launcher, the files page and
     the editor show it.

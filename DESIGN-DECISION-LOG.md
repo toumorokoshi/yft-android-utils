@@ -1,5 +1,27 @@
 # Design Decision Log
 
+## 2026-11-21: Markdown editor bottom formatting ribbon
+
+The markdown editor had no quick way to insert ATX headings on a mobile
+keyboard. It now has a bottom formatting ribbon with **H1**, **H2**, and
+**H3** buttons while editing.
+
+- **Placed inside `Scaffold.body`, not `bottomNavigationBar`.** A
+  `Scaffold`'s `bottomNavigationBar` stays behind the soft keyboard when
+  it opens, whereas placing the ribbon at the bottom of `Scaffold.body`
+  above `Expanded(_Editor)` keeps it docked directly above the keyboard,
+  matching editors such as Obsidian. `SafeArea(top: false)` keeps it
+  clear of system navigation bars when the keyboard is closed.
+- **Non-focusable ribbon buttons.** Wrapping the ribbon in
+  `Focus(canRequestFocus: false, descendantsAreFocusable: false)`
+  prevents tapping **H1**/**H2**/**H3** from stealing focus from the
+  `TextField` and dismissing the keyboard.
+- **Pure `applyHeading` function.** Heading insertion, level switching,
+  and toggling live in `markdown_formatting.dart` as a pure function on
+  `TextEditingValue`, keeping selection-offset math unit-testable and
+  routing edits through `TextEditingController.value` so debounced
+  autosave triggers automatically.
+
 ## 2026-10-28: Root folder and quick open
 
 Opening a file meant going through the system picker each time. Notes

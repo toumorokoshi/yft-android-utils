@@ -37,8 +37,9 @@ screen widget per file.
   client) changes the file while it is open, the editor keeps its text
   and the next save overwrites the other change. It could re-read the
   file when the app resumes and compare modification times.
-- **No undo, search or formatting toolbar.** The editor is a plain text
-  field.
+- **No undo, search or inline formatting buttons.** The bottom formatting
+  ribbon has H1/H2/H3 header buttons; bold, italic, lists, links, undo
+  and search are not yet implemented.
 - **Preview links do nothing.** Tapping a link in the preview does not
   open it (needs `url_launcher`).
 - **Large files.** The whole file is read and written on each save;

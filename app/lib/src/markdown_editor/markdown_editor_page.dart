@@ -7,6 +7,7 @@ import 'package:logging/logging.dart';
 
 import '../documents/document.dart';
 import 'markdown_editor_controller.dart';
+import 'markdown_formatting.dart';
 
 final _log = Logger('markdown_editor');
 
@@ -137,7 +138,19 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
               data: _controller.text.text,
               selectable: true,
             ),
-            _ => _Editor(controller: _controller.text),
+            _ => Column(
+              children: [
+                Expanded(child: _Editor(controller: _controller.text)),
+                _FormattingRibbon(
+                  onHeading: (level) {
+                    _controller.text.value = applyHeading(
+                      _controller.text.value,
+                      level,
+                    );
+                  },
+                ),
+              ],
+            ),
           },
         );
       },
@@ -164,6 +177,61 @@ class _Editor extends StatelessWidget {
         style: Theme.of(context).textTheme.bodyLarge
             ?.copyWith(fontFamily: 'monospace'),
         decoration: const InputDecoration.collapsed(hintText: 'Start writing…'),
+      ),
+    );
+  }
+}
+
+class _FormattingRibbon extends StatelessWidget {
+  const _FormattingRibbon({required this.onHeading});
+
+  final ValueChanged<int> onHeading;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Focus(
+      canRequestFocus: false,
+      descendantsAreFocusable: false,
+      child: Material(
+        key: const Key('formatting-ribbon'),
+        color: theme.colorScheme.surfaceContainerLow,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Divider(height: 1),
+              SizedBox(
+                height: 44,
+                width: double.infinity,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      for (final level in const [1, 2, 3])
+                        Tooltip(
+                          message: 'Heading $level',
+                          child: TextButton(
+                            onPressed: () => onHeading(level),
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(44, 36),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            child: Text('H$level'),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
