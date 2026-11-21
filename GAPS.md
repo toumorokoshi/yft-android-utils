@@ -39,8 +39,15 @@ screen widget per file.
   file when the app resumes and compare modification times.
 - **No undo, search or formatting toolbar.** The editor is a plain text
   field.
-- **Preview links do nothing.** Tapping a link in the preview does not
-  open it (needs `url_launcher`).
+- **Relative markdown file links are not opened.** Tapping a relative
+  link such as `other.md` in the preview shows an unsupported-link message
+  instead of resolving and opening the target file in the editor.
+- **Links in edit mode are plain text.** Links are only clickable in the
+  rendered preview, not in the monospace text editor.
+- **Heading inline formatting in preview.** Headings with inline
+  formatting (bold, code, links) render as plain heading text in the
+  preview because the heading builder uses `element.textContent` to
+  attach anchor keys.
 - **Large files.** The whole file is read and written on each save;
   multi-megabyte files will be slow.
 - **Pinning is untested across home screens.** Some home screens may run

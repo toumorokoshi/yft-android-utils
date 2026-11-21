@@ -5,6 +5,7 @@ import 'package:yft_android_utils/src/documents/document.dart';
 import 'package:yft_android_utils/src/documents/folder.dart';
 import 'package:yft_android_utils/src/documents/recent_documents.dart';
 import 'package:yft_android_utils/src/documents/root_folder.dart';
+import 'package:yft_android_utils/src/links/link_launcher.dart';
 import 'package:yft_android_utils/src/services.dart';
 
 const notes = Document(uri: 'content://docs/notes', name: 'notes.md');
@@ -125,6 +126,23 @@ class FakeRootFolder implements RootFolder {
   Future<void> save(Document folder) async => this.folder = folder;
 }
 
+/// Records launched external URIs; [shouldSucceed] controls the return value,
+/// and [throwError] simulates a [PlatformException].
+class FakeLinkLauncher implements LinkLauncher {
+  final launched = <Uri>[];
+  bool shouldSucceed = true;
+  bool throwError = false;
+
+  @override
+  Future<bool> launch(Uri uri) async {
+    if (throwError) {
+      throw PlatformException(code: 'launch_failed', message: 'cannot launch');
+    }
+    launched.add(uri);
+    return shouldSucceed;
+  }
+}
+
 AppServices fakeServices({
   FakeDocumentStore? documents,
   FakeFolderStore? folders,
@@ -132,6 +150,7 @@ AppServices fakeServices({
   FakeRecentDocuments? recents,
   FakeRootFolder? rootFolder,
   FakeDocumentWidgets? widgets,
+  FakeLinkLauncher? links,
 }) => AppServices(
   documents: documents ?? FakeDocumentStore(),
   folders: folders ?? FakeFolderStore(),
@@ -139,4 +158,5 @@ AppServices fakeServices({
   recents: recents ?? FakeRecentDocuments(),
   rootFolder: rootFolder ?? FakeRootFolder(),
   widgets: widgets ?? FakeDocumentWidgets(),
+  links: links ?? FakeLinkLauncher(),
 );

@@ -33,6 +33,14 @@ A sub-app that edits one markdown file on the device, saving as you type.
   is retried on the next edit.
 - A toggle switches between the editor and a rendered, selectable preview
   (`flutter_markdown_plus`).
+- Tapping a link in the preview:
+  - An anchor link (`#heading`) scrolls the preview to the matching
+    heading (using GitHub-style heading slugs with `-1`, `-2`, … suffixes
+    for duplicate headings).
+  - An external link (`http`, `https`, `mailto`, `tel`) opens in the
+    default external app.
+  - Missing headings, relative links, unsupported schemes, and launch
+    failures show a message.
 
 ## Home screen widget
 

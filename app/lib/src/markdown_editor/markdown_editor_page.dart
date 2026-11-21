@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:logging/logging.dart';
+import 'package:markdown/markdown.dart' as md;
 
 import '../documents/document.dart';
+import '../links/link_launcher.dart';
 import 'markdown_editor_controller.dart';
+import 'markdown_links.dart';
 
 final _log = Logger('markdown_editor');
 
@@ -22,6 +25,7 @@ class MarkdownEditorPage extends StatefulWidget {
     required this.document,
     required this.store,
     required this.widgets,
+    this.links = const PlatformLinkLauncher(),
     this.saveDelay = const Duration(milliseconds: 750),
     this.actions = const [],
   });
@@ -29,6 +33,7 @@ class MarkdownEditorPage extends StatefulWidget {
   final Document document;
   final DocumentStore store;
   final DocumentWidgets widgets;
+  final LinkLauncher links;
   final Duration saveDelay;
 
   /// App bar buttons shown before the editor's own, such as quick open.
@@ -78,9 +83,9 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
     if (message != null && mounted) _showMessage(message);
   }
 
-  void _showMessage(String message) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+  void _showMessage(String message) => ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 
   @override
   Widget build(BuildContext context) {
@@ -133,15 +138,112 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
                 ],
               ),
             ),
-            _ when _preview => Markdown(
+            _ when _preview => _MarkdownPreview(
               data: _controller.text.text,
-              selectable: true,
+              links: widget.links,
+              onMessage: _showMessage,
             ),
             _ => _Editor(controller: _controller.text),
           },
         );
       },
     );
+  }
+}
+
+const _headingTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+
+class _MarkdownPreview extends StatefulWidget {
+  const _MarkdownPreview({
+    required this.data,
+    required this.links,
+    required this.onMessage,
+  });
+
+  final String data;
+  final LinkLauncher links;
+  final ValueChanged<String> onMessage;
+
+  @override
+  State<_MarkdownPreview> createState() => _MarkdownPreviewState();
+}
+
+class _MarkdownPreviewState extends State<_MarkdownPreview> {
+  final _scrollController = ScrollController();
+  final _anchors = HeadingAnchorRegistry();
+  late final Map<String, MarkdownElementBuilder> _builders = {
+    for (final tag in _headingTags) tag: _HeadingAnchorBuilder(_anchors),
+  };
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLinkTap(String text, String? href, String title) async {
+    switch (parseMarkdownLink(href)) {
+      case AnchorLink(:final anchor):
+        final targetContext = _anchors.contextFor(anchor);
+        if (targetContext == null) {
+          widget.onMessage('Heading not found: $href');
+          return;
+        }
+        await Scrollable.ensureVisible(
+          targetContext,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          alignment: 0.0,
+        );
+      case ExternalLink(:final uri):
+        try {
+          final launched = await widget.links.launch(uri);
+          if (!launched && mounted) {
+            widget.onMessage('Could not open $uri');
+          }
+        } on Exception catch (error, stackTrace) {
+          _log.warning('could not open $uri', error, stackTrace);
+          if (mounted) widget.onMessage('Could not open $uri');
+        }
+      case UnsupportedLink(:final href):
+        if (href.isNotEmpty) {
+          widget.onMessage('Cannot open link: $href');
+        }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _anchors.reset();
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      child: MarkdownBody(
+        data: widget.data,
+        selectable: true,
+        fitContent: false,
+        builders: _builders,
+        onTapLink: (text, href, title) =>
+            unawaited(_handleLinkTap(text, href, title)),
+      ),
+    );
+  }
+}
+
+class _HeadingAnchorBuilder extends MarkdownElementBuilder {
+  _HeadingAnchorBuilder(this.anchors);
+
+  final HeadingAnchorRegistry anchors;
+
+  @override
+  Widget visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final key = anchors.register(element.textContent);
+    return SelectableText(element.textContent, key: key, style: preferredStyle);
   }
 }
 
