@@ -1,5 +1,15 @@
 # Design Decision Log
 
+## 2026-11-22: Release 0.2.0
+
+Bumped the app version from `0.1.0+1` to `0.2.0+2` and tagged `v0.2.0` to
+publish a new minor release containing the saved root folder and fuzzy
+quick open feature added since `v0.1.0`.
+
+- **Minor version bump (`0.1.0` to `0.2.0`) with incremented build number (`+2`).**
+  `v0.1.0` had build number `1`, and `.github/workflows/release.yml`
+  requires a strictly higher `versionCode` on each tagged release.
+
 ## 2026-10-28: Root folder and quick open
 
 Opening a file meant going through the system picker each time. Notes

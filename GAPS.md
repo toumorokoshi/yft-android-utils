@@ -21,8 +21,6 @@ screen widget per file.
   secrets each release is a debug-signed prerelease. Once the key is
   set, the first signed release cannot update an install of an earlier
   debug-signed one; it has to be uninstalled first.
-- **Release workflow not yet run.** No `v*` tag has been pushed, so the
-  publish job has not run on GitHub.
 - **No app icon.** The app uses Flutter's default launcher icon.
 - **No device tests.** There are no `integration_test` tests run on an
   emulator, so CI does not start the app on Android. The Kotlin code (the
