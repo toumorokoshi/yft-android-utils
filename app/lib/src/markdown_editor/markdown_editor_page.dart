@@ -6,6 +6,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:logging/logging.dart';
 
 import '../documents/document.dart';
+import 'formatting_ribbon.dart';
 import 'markdown_editor_controller.dart';
 
 final _log = Logger('markdown_editor');
@@ -137,7 +138,12 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
               data: _controller.text.text,
               selectable: true,
             ),
-            _ => _Editor(controller: _controller.text),
+            _ => Column(
+              children: [
+                Expanded(child: _Editor(controller: _controller.text)),
+                FormattingRibbon(controller: _controller.text),
+              ],
+            ),
           },
         );
       },

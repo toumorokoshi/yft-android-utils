@@ -35,11 +35,15 @@
   - `quick_open_page.dart`: the search page, `showQuickOpen`, and
     `highlightSpans` for the matched characters.
 - `app/lib/src/markdown_editor/`: the markdown sub-app.
+  - `formatting_ribbon.dart`: the horizontal formatting toolbar shown while
+    editing.
   - `markdown_editor_app.dart`: its `SubApp` and `openMarkdownEditor`.
   - `markdown_files_page.dart`: open, create or reopen a file.
   - `markdown_editor_controller.dart`: the editor state: loading, the
     debounced autosave and the save status.
   - `markdown_editor_page.dart`: the editor and preview.
+  - `markdown_formatting.dart`: pure `TextEditingValue` transformations for
+    headings, lists, quotes, inline wrapping, and links.
   - `quick_open_button.dart`: the app bar button that runs quick open and
     opens the chosen file in the editor. The launcher, the files page and
     the editor show it.

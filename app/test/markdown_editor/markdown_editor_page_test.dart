@@ -55,10 +55,34 @@ void main() {
 
     expect(find.byType(Markdown), findsOneWidget);
     expect(find.byKey(const Key('markdown-editor')), findsNothing);
+    expect(find.byKey(const Key('formatting-ribbon')), findsNothing);
 
     await tester.tap(find.byTooltip('Edit'));
     await tester.pump();
     expect(find.byKey(const Key('markdown-editor')), findsOneWidget);
+    expect(find.byKey(const Key('formatting-ribbon')), findsOneWidget);
+  });
+
+  testWidgets('formatting ribbon sets and toggles H2 and saves', (
+    tester,
+  ) async {
+    store = FakeDocumentStore(files: {notes.uri: 'Subtitle'});
+    await pumpEditor(tester);
+
+    expect(find.byKey(const Key('formatting-ribbon')), findsOneWidget);
+    expect(find.byTooltip('Heading 2'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Heading 2'));
+    await tester.pump();
+    expect(find.text('## Subtitle'), findsOneWidget);
+
+    await tester.pump(delay);
+    await tester.pump();
+    expect(store.files[notes.uri], '## Subtitle');
+
+    await tester.tap(find.byTooltip('Heading 2'));
+    await tester.pump();
+    expect(find.text('Subtitle'), findsOneWidget);
   });
 
   testWidgets('offers a retry when the file cannot be read', (tester) async {

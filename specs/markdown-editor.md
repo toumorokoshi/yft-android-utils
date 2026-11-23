@@ -24,7 +24,10 @@ A sub-app that edits one markdown file on the device, saving as you type.
 
 ## Editing
 
-- The editor shows the file's text in a full-screen, monospace text field.
+- The editor shows the file's text in a full-screen, monospace text field,
+  with a horizontal formatting ribbon along the bottom (above the keyboard
+  while editing) for headings (`H1`, `H2`, `H3`), bold, italic, inline code,
+  bullet lists, checklists, blockquotes, and links.
 - Edits are saved 750 ms after the last keystroke, when the app is hidden,
   and when the editor is closed. Writes are queued, so they reach the file
   in order, and a write replaces the whole file.

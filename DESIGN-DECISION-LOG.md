@@ -1,5 +1,24 @@
 # Design Decision Log
 
+## 2026-11-23: Markdown formatting ribbon
+
+Editing headings and lists on a mobile keyboard required typing `#` and `-`
+manually. The editor now shows a horizontal formatting ribbon along the bottom
+while editing (`H1`, `H2`, `H3`, bold, italic, inline code, bullet list,
+checklist, blockquote, and link), hidden in preview mode.
+
+- **Pure `TextEditingValue` transforms.** Formatting logic lives in
+  `markdown_formatting.dart` as pure functions from `TextEditingValue` to
+  `TextEditingValue`, so cursor and selection updates are unit tested without
+  a widget tree. Heading actions toggle or replace existing ATX heading
+  prefixes across the selected line(s).
+- **`ExcludeFocus` on the ribbon.** Wrapping the ribbon in `ExcludeFocus`
+  prevents tapping a formatting button from stealing focus from the
+  `TextField` and dismissing the soft keyboard.
+- **Bottom placement in the editor body.** Placing the ribbon below the
+  expanded `TextField` inside `Scaffold.body` keeps it anchored right above
+  the soft keyboard without crowding the app bar.
+
 ## 2026-11-22: Release 0.2.0
 
 Bumped the app version from `0.1.0+1` to `0.2.0+2` and tagged `v0.2.0` to
