@@ -86,6 +86,7 @@ class FormattingRibbon extends StatelessWidget {
               const Divider(height: 1),
               SizedBox(
                 height: 44,
+                width: double.infinity,
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 4),

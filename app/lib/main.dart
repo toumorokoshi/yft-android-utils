@@ -5,6 +5,7 @@ import 'src/app.dart';
 import 'src/documents/platform_documents.dart';
 import 'src/documents/recent_documents.dart';
 import 'src/documents/root_folder.dart';
+import 'src/links/link_launcher.dart';
 import 'src/logging.dart';
 import 'src/services.dart';
 
@@ -24,6 +25,7 @@ void main() {
         recents: SharedPreferencesRecentDocuments(),
         rootFolder: SharedPreferencesRootFolder(),
         widgets: documents,
+        links: const PlatformLinkLauncher(),
       ),
     ),
   );

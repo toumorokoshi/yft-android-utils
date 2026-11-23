@@ -29,6 +29,28 @@ quick open feature added since `v0.1.0`.
   `v0.1.0` had build number `1`, and `.github/workflows/release.yml`
   requires a strictly higher `versionCode` on each tagged release.
 
+## 2026-11-21: Preview anchor and external links
+
+Tapping links in the markdown preview previously did nothing. Users need
+to jump to headings within a document via `#anchor` links and open
+external weblinks.
+
+- **`MarkdownBody` inside `SingleChildScrollView` instead of `Markdown`.**
+  `flutter_markdown_plus`'s `Markdown` widget uses a lazy `ListView`, so
+  headings far down a document are not mounted yet when tapping a link at
+  the top. Rendering `MarkdownBody` inside a `SingleChildScrollView` keeps
+  every heading's `GlobalKey` mounted so `Scrollable.ensureVisible` can
+  scroll to any heading immediately.
+- **GitHub-style heading slugification.** `slugifyHeading` and
+  `HeadingAnchorRegistry` normalize heading text to lowercase, strip
+  punctuation, replace spaces with hyphens, and append `-1`, `-2`, … for
+  duplicate headings. Links are classified into a sealed
+  `MarkdownLinkTarget` (`AnchorLink`, `ExternalLink`, `UnsupportedLink`).
+- **`LinkLauncher` interface in `AppServices`.** External links (`http`,
+  `https`, `mailto`, `tel`) are launched via `url_launcher` with
+  `LaunchMode.externalApplication` behind `LinkLauncher`, keeping widget
+  tests free of platform channel mocks via `FakeLinkLauncher`.
+
 ## 2026-10-28: Root folder and quick open
 
 Opening a file meant going through the system picker each time. Notes

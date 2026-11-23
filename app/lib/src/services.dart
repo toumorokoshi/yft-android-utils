@@ -2,6 +2,7 @@ import 'documents/document.dart';
 import 'documents/folder.dart';
 import 'documents/recent_documents.dart';
 import 'documents/root_folder.dart';
+import 'links/link_launcher.dart';
 
 /// The platform-backed dependencies sub-apps use. `main` builds the real
 /// ones; tests pass fakes.
@@ -13,6 +14,7 @@ class AppServices {
     required this.recents,
     required this.rootFolder,
     required this.widgets,
+    required this.links,
   }) : folderIndex = FolderIndex(folders);
 
   final DocumentStore documents;
@@ -21,6 +23,7 @@ class AppServices {
   final RecentDocuments recents;
   final RootFolder rootFolder;
   final DocumentWidgets widgets;
+  final LinkLauncher links;
 
   /// The session's cache of [folders] listings.
   final FolderIndex folderIndex;

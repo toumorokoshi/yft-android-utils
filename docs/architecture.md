@@ -9,8 +9,8 @@
   sent from home screen widgets in the markdown editor.
 - `app/lib/src/services.dart`: `AppServices`, the platform-backed
   dependencies (documents, folders, launch documents, recent files, the
-  root folder, widgets) handed to sub-apps, plus the session's
-  `FolderIndex`.
+  root folder, widgets, link launcher) handed to sub-apps, plus the
+  session's `FolderIndex`.
 - `app/lib/src/sub_apps.dart`: the list of sub-apps, in launcher order.
 - `app/lib/src/launcher/`: `SubApp` (one utility's id, title, icon and
   first screen) and `LauncherPage`, the grid of sub-app tiles.
@@ -34,6 +34,9 @@
     scorer, and `rankFiles`, which sorts a listing for a query.
   - `quick_open_page.dart`: the search page, `showQuickOpen`, and
     `highlightSpans` for the matched characters.
+- `app/lib/src/links/`: opening external URIs.
+  - `link_launcher.dart`: the `LinkLauncher` interface and
+    `PlatformLinkLauncher` over `url_launcher`.
 - `app/lib/src/markdown_editor/`: the markdown sub-app.
   - `formatting_ribbon.dart`: the horizontal formatting toolbar shown while
     editing.
@@ -41,9 +44,13 @@
   - `markdown_files_page.dart`: open, create or reopen a file.
   - `markdown_editor_controller.dart`: the editor state: loading, the
     debounced autosave and the save status.
-  - `markdown_editor_page.dart`: the editor and preview.
+  - `markdown_editor_page.dart`: the editor and preview, including anchor
+    scrolling and external link launching.
   - `markdown_formatting.dart`: pure `TextEditingValue` transformations for
     headings, lists, quotes, inline wrapping, and links.
+  - `markdown_links.dart`: pure functions for classifying links
+    (`parseMarkdownLink`) and generating GitHub-style heading anchor slugs
+    (`slugifyHeading`, `HeadingAnchorRegistry`).
   - `quick_open_button.dart`: the app bar button that runs quick open and
     opens the chosen file in the editor. The launcher, the files page and
     the editor show it.
