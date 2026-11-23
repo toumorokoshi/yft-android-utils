@@ -18,16 +18,72 @@ import android.widget.RemoteViews
 object MarkdownWidgets {
     private const val PREFERENCES = "markdown_widgets"
     const val EXTRA_NAME = "dev.yft.yft_android_utils.extra.NAME"
+    const val EXTRA_WIDGET_ID = "dev.yft.yft_android_utils.extra.WIDGET_ID"
+    const val EXTRA_TREE_URI = "dev.yft.yft_android_utils.extra.TREE_URI"
+    const val EXTRA_PATH = "dev.yft.yft_android_utils.extra.PATH"
+    const val MAX_LISTED_FILES = 20_000
+
+    data class Target(
+        val widgetId: Int,
+        val uri: Uri,
+        val name: String,
+        val treeUri: Uri?,
+        val path: String?,
+    )
 
     private fun preferences(context: Context) =
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
 
-    fun save(context: Context, widgetId: Int, uri: Uri, name: String) {
-        preferences(context)
-            .edit()
-            .putString("uri_$widgetId", uri.toString())
-            .putString("name_$widgetId", name)
-            .apply()
+    fun save(
+        context: Context,
+        widgetId: Int,
+        uri: Uri,
+        name: String,
+        treeUri: Uri? = null,
+        path: String? = null,
+    ) {
+        val editor =
+            preferences(context)
+                .edit()
+                .putString("uri_$widgetId", uri.toString())
+                .putString("name_$widgetId", name)
+        if (treeUri != null && path != null) {
+            editor.putString("tree_uri_$widgetId", treeUri.toString())
+            editor.putString("path_$widgetId", path)
+        } else {
+            editor.remove("tree_uri_$widgetId").remove("path_$widgetId")
+        }
+        editor.apply()
+    }
+
+    fun find(context: Context, widgetId: Int): Target? {
+        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return null
+        val preferences = preferences(context)
+        val uriString = preferences.getString("uri_$widgetId", null) ?: return null
+        val name =
+            preferences.getString("name_$widgetId", null)
+                ?: context.getString(R.string.markdown_widget_unset)
+        val treeUriString = preferences.getString("tree_uri_$widgetId", null)
+        val path = preferences.getString("path_$widgetId", null)
+        return Target(
+            widgetId = widgetId,
+            uri = Uri.parse(uriString),
+            name = name,
+            treeUri = treeUriString?.let { Uri.parse(it) },
+            path = path,
+        )
+    }
+
+    fun findByUri(context: Context, uri: Uri): Target? {
+        val widgetIds =
+            AppWidgetManager.getInstance(context)
+                .getAppWidgetIds(ComponentName(context, MarkdownWidgetProvider::class.java))
+        val targetUri = uri.toString()
+        for (widgetId in widgetIds) {
+            val target = find(context, widgetId)
+            if (target != null && target.uri.toString() == targetUri) return target
+        }
+        return null
     }
 
     private const val PIN_WINDOW_MILLIS = 60_000L
@@ -50,7 +106,13 @@ object MarkdownWidgets {
      * [MarkdownWidgetPinnedReceiver] binds the file to the new widget. Returns false when the
      * home screen cannot add widgets for apps (or Android is older than 8.0).
      */
-    fun requestPin(context: Context, uri: Uri, name: String): Boolean {
+    fun requestPin(
+        context: Context,
+        uri: Uri,
+        name: String,
+        treeUri: Uri? = null,
+        path: String? = null,
+    ): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
         val manager = AppWidgetManager.getInstance(context)
         if (!manager.isRequestPinAppWidgetSupported) return false
@@ -58,6 +120,9 @@ object MarkdownWidgets {
             Intent(context, MarkdownWidgetPinnedReceiver::class.java)
                 .setData(uri)
                 .putExtra(EXTRA_NAME, name)
+        if (treeUri != null && path != null) {
+            callback.putExtra(EXTRA_TREE_URI, treeUri.toString()).putExtra(EXTRA_PATH, path)
+        }
         // Mutable so the home screen can add the new widget's id.
         var flags = PendingIntent.FLAG_UPDATE_CURRENT
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) flags = flags or PendingIntent.FLAG_MUTABLE
@@ -71,7 +136,14 @@ object MarkdownWidgets {
 
     fun remove(context: Context, widgetIds: IntArray) {
         val editor = preferences(context).edit()
-        widgetIds.forEach { editor.remove("uri_$it").remove("name_$it").remove("pinned_$it") }
+        widgetIds.forEach {
+            editor
+                .remove("uri_$it")
+                .remove("name_$it")
+                .remove("pinned_$it")
+                .remove("tree_uri_$it")
+                .remove("path_$it")
+        }
         editor.apply()
     }
 
@@ -84,7 +156,12 @@ object MarkdownWidgets {
                 ?: context.getString(R.string.markdown_widget_unset)
         val intent =
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        if (uri != null) intent.setAction(Documents.ACTION_OPEN).setData(Uri.parse(uri))
+        if (uri != null) {
+            intent
+                .setAction(Documents.ACTION_OPEN)
+                .setData(Uri.parse(uri))
+                .putExtra(EXTRA_WIDGET_ID, widgetId)
+        }
         val tap =
             PendingIntent.getActivity(
                 context,
@@ -123,7 +200,9 @@ class MarkdownWidgetPinnedReceiver : BroadcastReceiver() {
         val uri = intent.data
         val name = intent.getStringExtra(MarkdownWidgets.EXTRA_NAME)
         if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID || uri == null || name == null) return
-        MarkdownWidgets.save(context, widgetId, uri, name)
+        val treeUri = intent.getStringExtra(MarkdownWidgets.EXTRA_TREE_URI)?.let { Uri.parse(it) }
+        val path = intent.getStringExtra(MarkdownWidgets.EXTRA_PATH)
+        MarkdownWidgets.save(context, widgetId, uri, name, treeUri, path)
         MarkdownWidgets.markPinned(context, widgetId)
         MarkdownWidgets.update(context, AppWidgetManager.getInstance(context), widgetId)
     }
@@ -163,15 +242,42 @@ class MarkdownWidgetConfigureActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         val uri = data?.data
         if (requestCode == REQUEST_PICK && resultCode == RESULT_OK && uri != null) {
-            try {
-                Documents.persist(this, uri)
-                MarkdownWidgets.save(this, widgetId, uri, Documents.displayName(this, uri))
-                MarkdownWidgets.update(this, AppWidgetManager.getInstance(this), widgetId)
-                finishConfigured()
-                return
-            } catch (error: SecurityException) {
-                Log.w(TAG, "no write access to $uri", error)
-            }
+            val appContext = applicationContext
+            val targetWidgetId = widgetId
+            Thread {
+                var configured = false
+                try {
+                    Documents.persist(appContext, uri)
+                    val name = Documents.displayName(appContext, uri)
+                    val location =
+                        Documents.resolveTreePath(
+                            appContext,
+                            uri,
+                            MarkdownWidgets.MAX_LISTED_FILES,
+                        )
+                    MarkdownWidgets.save(
+                        appContext,
+                        targetWidgetId,
+                        uri,
+                        name,
+                        location?.first,
+                        location?.second,
+                    )
+                    MarkdownWidgets.update(
+                        appContext,
+                        AppWidgetManager.getInstance(appContext),
+                        targetWidgetId,
+                    )
+                    configured = true
+                } catch (error: SecurityException) {
+                    Log.w(TAG, "no write access to $uri", error)
+                }
+                runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    if (configured) finishConfigured() else finish()
+                }
+            }.start()
+            return
         }
         finish()
     }

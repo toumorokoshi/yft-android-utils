@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yft_android_utils/src/app.dart';
 import 'package:yft_android_utils/src/launcher/launcher_page.dart';
@@ -46,5 +47,39 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
     expect(find.byType(LauncherPage), findsOneWidget);
+  });
+
+  testWidgets('shows a snackbar when the initial launch document fails', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      App(
+        services: fakeServices(
+          launches: FakeDocumentLaunches(
+            initialError: PlatformException(
+              code: 'io',
+              message: 'Could not open "notes.md".',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LauncherPage), findsOneWidget);
+    expect(find.text('Could not open "notes.md".'), findsOneWidget);
+  });
+
+  testWidgets('shows a snackbar when a warm launch document fails', (
+    tester,
+  ) async {
+    final launches = FakeDocumentLaunches();
+    await tester.pumpWidget(App(services: fakeServices(launches: launches)));
+    await tester.pumpAndSettle();
+
+    launches.errorController.add('Could not open "todo.md".');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Could not open "todo.md".'), findsOneWidget);
   });
 }

@@ -63,6 +63,14 @@ A sub-app that edits one markdown file on the device, saving as you type.
   the widget holds: it survives restarts, reboots and app updates, and
   ends when the app is uninstalled or its data is cleared, the permission
   is revoked, or the file is moved or deleted.
+- When the file lives under a persisted [quick open](quick-open.md) root
+  folder, the widget also records the folder tree URI and the file's
+  relative path. If another app replaces the file and changes its
+  document URI or revokes the per-file grant, tapping the widget
+  re-resolves the file by its relative path under that folder and updates
+  the widget to the new URI.
+- If a widget tap still cannot open the file, the app shows an error
+  message rather than silently ignoring the tap.
 - The app only opens files it holds a persisted permission for, either
   for the file or for the root folder it was found in, so other apps
   cannot use the widget's intent to make it write to their files.

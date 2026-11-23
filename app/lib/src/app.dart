@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 import 'documents/document.dart';
@@ -28,13 +29,16 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   final _navigator = GlobalKey<NavigatorState>();
+  final _scaffoldMessenger = GlobalKey<ScaffoldMessengerState>();
   late final _subApps = buildSubApps(widget.services);
   late final StreamSubscription<Document> _launches;
+  late final StreamSubscription<String> _launchErrors;
 
   @override
   void initState() {
     super.initState();
     _launches = widget.services.launches.opened.listen(_open);
+    _launchErrors = widget.services.launches.errors.listen(_showError);
     unawaited(_openInitial());
   }
 
@@ -46,7 +50,20 @@ class _AppState extends State<App> {
       _open(document);
     } on Exception catch (error, stackTrace) {
       _log.warning('could not read the launch document', error, stackTrace);
+      if (!mounted) return;
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      final message = error is PlatformException && error.message != null
+          ? error.message!
+          : 'Could not open the file.';
+      _showError(message);
     }
+  }
+
+  void _showError(String message) {
+    _scaffoldMessenger.currentState?.showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   void _open(Document document) {
@@ -65,6 +82,7 @@ class _AppState extends State<App> {
   @override
   void dispose() {
     unawaited(_launches.cancel());
+    unawaited(_launchErrors.cancel());
     super.dispose();
   }
 
@@ -72,6 +90,7 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigator,
+      scaffoldMessengerKey: _scaffoldMessenger,
       title: appTitle,
       theme: ThemeData(colorSchemeSeed: Colors.indigo),
       darkTheme: ThemeData(
