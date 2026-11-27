@@ -18,6 +18,9 @@
   sub-app full screen; back returns to the grid.
 - The launcher's app bar has a quick open button that finds a file in the
   saved root folder (see [quick-open.md](quick-open.md)).
+- Main screens (launcher, markdown files, markdown editor) share a
+  collapsible right-hand navigation sidebar (`NavigationSidebarScaffold`),
+  starting collapsed with a toggle button in the app bar.
 
 ## Sub-apps
 

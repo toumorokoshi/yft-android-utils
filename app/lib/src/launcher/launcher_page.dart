@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation_sidebar/navigation_sidebar.dart';
+import '../services.dart';
 import 'sub_app.dart';
 
 /// The home screen: a grid with one tile per [SubApp].
@@ -8,19 +10,23 @@ class LauncherPage extends StatelessWidget {
     super.key,
     required this.title,
     required this.subApps,
+    this.services,
     this.actions = const [],
   });
 
   final String title;
   final List<SubApp> subApps;
+  final AppServices? services;
 
   /// App bar buttons, such as quick open.
   final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title), actions: actions),
+    return NavigationSidebarScaffold(
+      title: Text(title),
+      actions: actions,
+      services: services,
       body: GridView.extent(
         maxCrossAxisExtent: 180,
         padding: const EdgeInsets.all(16),

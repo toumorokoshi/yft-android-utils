@@ -37,6 +37,13 @@
 - `app/lib/src/links/`: opening external URIs.
   - `link_launcher.dart`: the `LinkLauncher` interface and
     `PlatformLinkLauncher` over `url_launcher`.
+- `app/lib/src/navigation_sidebar/`: the collapsible right-hand navigation
+  sidebar.
+  - `markdown_outline.dart`: pure functions (`parseMarkdownHeadings`) to
+    extract ATX headings and deduplicated anchor slugs from markdown text.
+  - `navigation_sidebar.dart`: `NavigationSidebarScaffold`, wrapping main
+    screens with an app bar toggle button and an animated right-hand panel
+    for document outline and file navigation (Quick Open and recent files).
 - `app/lib/src/markdown_editor/`: the markdown sub-app.
   - `formatting_ribbon.dart`: the horizontal formatting toolbar shown while
     editing.

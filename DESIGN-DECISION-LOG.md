@@ -1,5 +1,27 @@
 # Design Decision Log
 
+## 2026-11-27: Collapsible right-hand navigation sidebar
+
+Navigating between headings in longer markdown notes and switching to
+recent files required backing out or scrolling manually. Main screens now
+use `NavigationSidebarScaffold`, which adds a collapsible right-hand
+navigation sidebar starting collapsed with a toggle button in the app bar.
+
+- **`NavigationSidebarScaffold` shared wrapper.** Wrapping `LauncherPage`,
+  `MarkdownFilesPage`, and `MarkdownEditorPage` in a shared `Scaffold`
+  builder keeps the app bar toggle button and right-hand `AnimatedSize`
+  panel consistent across screens while keeping screens full-bleed when
+  collapsed (`SizedBox.shrink()`, mounting no extra `Scrollable` until
+  expanded).
+- **Pure `parseMarkdownHeadings` + shared slug deduplication.**
+  `markdown_outline.dart` extracts ATX headings (`#`–`######`), skips
+  fenced code blocks, and shares `deduplicateSlug` with
+  `HeadingAnchorRegistry` in `markdown_links.dart` so outline taps in
+  preview mode scroll to the exact rendered heading key.
+- **Mode-aware heading navigation.** Tapping an outline heading scrolls the
+  rendered preview when in preview mode, or moves the editor's selection
+  cursor to the heading's character offset when in edit mode.
+
 ## 2026-11-23: Markdown formatting ribbon
 
 Editing headings and lists on a mobile keyboard required typing `#` and `-`

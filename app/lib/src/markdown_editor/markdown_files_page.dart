@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 
 import '../documents/document.dart';
 import '../documents/root_folder.dart';
+import '../navigation_sidebar/navigation_sidebar.dart';
 import '../services.dart';
 import 'markdown_editor_app.dart';
 import 'quick_open_button.dart';
@@ -82,13 +83,13 @@ class _MarkdownFilesPageState extends State<MarkdownFilesPage> {
   @override
   Widget build(BuildContext context) {
     final documents = widget.services.documents;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Markdown'),
-        actions: [
-          QuickOpenButton(services: widget.services, onCancel: _loadFolder),
-        ],
-      ),
+    return NavigationSidebarScaffold(
+      title: const Text('Markdown'),
+      services: widget.services,
+      onQuickOpenCancel: _loadFolder,
+      actions: [
+        QuickOpenButton(services: widget.services, onCancel: _loadFolder),
+      ],
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16),
         children: [

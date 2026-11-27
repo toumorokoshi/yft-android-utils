@@ -8,6 +8,9 @@ import 'package:markdown/markdown.dart' as md;
 
 import '../documents/document.dart';
 import '../links/link_launcher.dart';
+import '../navigation_sidebar/markdown_outline.dart';
+import '../navigation_sidebar/navigation_sidebar.dart';
+import '../services.dart';
 import 'formatting_ribbon.dart';
 import 'markdown_editor_controller.dart';
 import 'markdown_links.dart';
@@ -27,6 +30,7 @@ class MarkdownEditorPage extends StatefulWidget {
     required this.store,
     required this.widgets,
     this.links = const PlatformLinkLauncher(),
+    this.services,
     this.saveDelay = const Duration(milliseconds: 750),
     this.actions = const [],
   });
@@ -35,6 +39,7 @@ class MarkdownEditorPage extends StatefulWidget {
   final DocumentStore store;
   final DocumentWidgets widgets;
   final LinkLauncher links;
+  final AppServices? services;
   final Duration saveDelay;
 
   /// App bar buttons shown before the editor's own, such as quick open.
@@ -51,6 +56,8 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
     saveDelay: widget.saveDelay,
   );
   late final AppLifecycleListener _lifecycle;
+  final _previewKey = GlobalKey<_MarkdownPreviewState>();
+  final _editorFocusNode = FocusNode();
   bool _preview = false;
 
   @override
@@ -65,8 +72,20 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
   @override
   void dispose() {
     _lifecycle.dispose();
+    _editorFocusNode.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _jumpToHeading(MarkdownHeading heading) {
+    if (_preview) {
+      unawaited(_previewKey.currentState?.scrollToAnchor(heading.anchor));
+      return;
+    }
+    _controller.text.selection = TextSelection.collapsed(
+      offset: heading.offset,
+    );
+    _editorFocusNode.requestFocus();
   }
 
   Future<void> _pinWidget() async {
@@ -91,37 +110,42 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _controller,
+      listenable: Listenable.merge([_controller, _controller.text]),
       builder: (context, _) {
         final status = _controller.status;
-        return Scaffold(
-          appBar: AppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.document.name, overflow: TextOverflow.ellipsis),
-                Text(
-                  saveStatusLabel(status),
-                  key: const Key('save-status'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-            actions: [
-              ...widget.actions,
-              if (_controller.isLoaded)
-                IconButton(
-                  tooltip: _preview ? 'Edit' : 'Preview',
-                  icon: Icon(_preview ? Icons.edit : Icons.visibility),
-                  onPressed: () => setState(() => _preview = !_preview),
-                ),
-              IconButton(
-                tooltip: 'Add widget to home screen',
-                icon: const Icon(Icons.add_to_home_screen),
-                onPressed: _pinWidget,
+        final outline = _controller.isLoaded
+            ? parseMarkdownHeadings(_controller.text.text)
+            : const <MarkdownHeading>[];
+        return NavigationSidebarScaffold(
+          services: widget.services,
+          currentDocument: widget.document,
+          outline: outline,
+          onHeadingTap: _controller.isLoaded ? _jumpToHeading : null,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.document.name, overflow: TextOverflow.ellipsis),
+              Text(
+                saveStatusLabel(status),
+                key: const Key('save-status'),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),
+          actions: [
+            ...widget.actions,
+            if (_controller.isLoaded)
+              IconButton(
+                tooltip: _preview ? 'Edit' : 'Preview',
+                icon: Icon(_preview ? Icons.edit : Icons.visibility),
+                onPressed: () => setState(() => _preview = !_preview),
+              ),
+            IconButton(
+              tooltip: 'Add widget to home screen',
+              icon: const Icon(Icons.add_to_home_screen),
+              onPressed: _pinWidget,
+            ),
+          ],
           body: switch (status) {
             SaveStatus.loading => const Center(
               child: CircularProgressIndicator(),
@@ -140,13 +164,19 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
               ),
             ),
             _ when _preview => _MarkdownPreview(
+              key: _previewKey,
               data: _controller.text.text,
               links: widget.links,
               onMessage: _showMessage,
             ),
             _ => Column(
               children: [
-                Expanded(child: _Editor(controller: _controller.text)),
+                Expanded(
+                  child: _Editor(
+                    controller: _controller.text,
+                    focusNode: _editorFocusNode,
+                  ),
+                ),
                 FormattingRibbon(controller: _controller.text),
               ],
             ),
@@ -161,6 +191,7 @@ const _headingTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 
 class _MarkdownPreview extends StatefulWidget {
   const _MarkdownPreview({
+    super.key,
     required this.data,
     required this.links,
     required this.onMessage,
@@ -187,20 +218,26 @@ class _MarkdownPreviewState extends State<_MarkdownPreview> {
     super.dispose();
   }
 
+  /// Scrolls the preview to the heading with [anchor], returning whether it
+  /// was found.
+  Future<bool> scrollToAnchor(String anchor) async {
+    final targetContext = _anchors.contextFor(anchor);
+    if (targetContext == null) return false;
+    await Scrollable.ensureVisible(
+      targetContext,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      alignment: 0.0,
+    );
+    return true;
+  }
+
   Future<void> _handleLinkTap(String text, String? href, String title) async {
     switch (parseMarkdownLink(href)) {
       case AnchorLink(:final anchor):
-        final targetContext = _anchors.contextFor(anchor);
-        if (targetContext == null) {
+        if (!await scrollToAnchor(anchor)) {
           widget.onMessage('Heading not found: $href');
-          return;
         }
-        await Scrollable.ensureVisible(
-          targetContext,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-          alignment: 0.0,
-        );
       case ExternalLink(:final uri):
         try {
           final launched = await widget.links.launch(uri);
@@ -254,9 +291,10 @@ class _HeadingAnchorBuilder extends MarkdownElementBuilder {
 }
 
 class _Editor extends StatelessWidget {
-  const _Editor({required this.controller});
+  const _Editor({required this.controller, required this.focusNode});
 
   final TextEditingController controller;
+  final FocusNode focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +303,7 @@ class _Editor extends StatelessWidget {
       child: TextField(
         key: const Key('markdown-editor'),
         controller: controller,
+        focusNode: focusNode,
         expands: true,
         maxLines: null,
         keyboardType: TextInputType.multiline,

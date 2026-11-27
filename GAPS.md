@@ -102,3 +102,14 @@ with fzf-style fuzzy matching, reached from the app bars.
 - **Quick open always lands above the launcher.** Opening from the files
   page closes it, so back from the editor goes to the launcher rather
   than the files page.
+
+## Navigation sidebar
+
+- **Only recent files are listed inline.** The sidebar's Files section
+  offers Quick Open and recent files, rather than browsing the saved root
+  folder's directory tree inline.
+- **Only ATX headings are outlined.** Setext-style headings (`===` /
+  `---` underlines) are not parsed into the document outline.
+- **Jumping to a heading in edit mode focuses the text field.** Tapping
+  an outline heading while editing moves the cursor and requests focus,
+  which may bring up the soft keyboard even when browsing.

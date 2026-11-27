@@ -20,7 +20,9 @@ A sub-app that edits one markdown file on the device, saving as you type.
   - **Recent**: the last 10 files opened, newest first. Tapping one opens
     it.
 - The app bars of the first screen and the editor have a quick open
-  button (see [quick-open.md](quick-open.md)).
+  button (see [quick-open.md](quick-open.md)) and a toggle button for
+  the right-hand navigation sidebar, which shows Quick Open, recent files,
+  and (in the editor) the document's heading outline.
 
 ## Editing
 

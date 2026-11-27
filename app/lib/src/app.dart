@@ -100,6 +100,7 @@ class _AppState extends State<App> {
       home: LauncherPage(
         title: appTitle,
         subApps: _subApps,
+        services: widget.services,
         actions: [QuickOpenButton(services: widget.services)],
       ),
     );

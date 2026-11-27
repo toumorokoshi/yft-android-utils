@@ -64,6 +64,18 @@ final _nonSlugCharacters = RegExp(r'[^\p{L}\p{N} \-_]', unicode: true);
 String slugifyHeading(String text) =>
     text.toLowerCase().replaceAll(_nonSlugCharacters, '').replaceAll(' ', '-');
 
+/// Returns a unique slug based on [base] not yet present in [usedSlugs],
+/// appending `-1`, `-2`, ... for duplicates, and records it in [usedSlugs].
+String deduplicateSlug(String base, Set<String> usedSlugs) {
+  var slug = base;
+  var suffix = 1;
+  while (!usedSlugs.add(slug)) {
+    slug = '$base-$suffix';
+    suffix++;
+  }
+  return slug;
+}
+
 /// Tracks [GlobalKey]s for rendered markdown headings, keyed by their
 /// deduplicated anchor slugs.
 class HeadingAnchorRegistry {
@@ -77,13 +89,8 @@ class HeadingAnchorRegistry {
   /// Duplicate headings receive `-1`, `-2`, ... suffixes matching GitHub's
   /// anchor convention.
   GlobalKey register(String headingText) {
-    final base = slugifyHeading(headingText);
-    var slug = base;
-    var suffix = 1;
-    while (_keys.containsKey(slug)) {
-      slug = '$base-$suffix';
-      suffix++;
-    }
+    final used = _keys.keys.toSet();
+    final slug = deduplicateSlug(slugifyHeading(headingText), used);
     return _keys[slug] = GlobalKey();
   }
 

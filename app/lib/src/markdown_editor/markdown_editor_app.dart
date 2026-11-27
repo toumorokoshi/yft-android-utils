@@ -48,6 +48,7 @@ Future<void> openMarkdownEditor(
       store: services.documents,
       widgets: services.widgets,
       links: services.links,
+      services: services,
       actions: [QuickOpenButton(services: services)],
     ),
   );
