@@ -1,5 +1,17 @@
 # Design Decision Log
 
+## 2026-11-27: Release 0.3.0
+
+Bumped the app version from `0.2.0+2` to `0.3.0+3` and tagged `v0.3.0` to
+publish a new minor release containing preview anchor and external links,
+widget shortcut re-resolution under the saved root folder, the markdown
+formatting ribbon, and the collapsible right-hand navigation sidebar added
+since `v0.2.0`.
+
+- **Minor version bump (`0.2.0` to `0.3.0`) with incremented build number (`+3`).**
+  `v0.2.0` had build number `2`, and `.github/workflows/release.yml`
+  requires a strictly higher `versionCode` on each tagged release.
+
 ## 2026-11-27: Collapsible right-hand navigation sidebar
 
 Navigating between headings in longer markdown notes and switching to
