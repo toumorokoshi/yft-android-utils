@@ -1,5 +1,15 @@
 # Design Decision Log
 
+## 2026-11-27: Release 0.3.1
+
+Bumped the app version from `0.3.0+3` to `0.3.1+4` and tagged `v0.3.1` to
+publish a patch release containing the Quick Open refresh-on-resume and
+Storage Access Framework `EXTRA_LOADING` fix added since `v0.3.0`.
+
+- **Patch version bump (`0.3.0` to `0.3.1`) with incremented build number (`+4`).**
+  `v0.3.0` had build number `3`, and `.github/workflows/release.yml`
+  requires a strictly higher `versionCode` on each tagged release.
+
 ## 2026-11-27: Refresh Quick Open on resume and handle SAF EXTRA_LOADING
 
 Adding new files to the saved root folder from another app or sync client
