@@ -32,10 +32,10 @@ open it in the markdown editor.
 - Files are listed recursively below the root folder, breadth first.
   Hidden files and folders (names starting with `.`) are skipped, and
   listing stops after 20,000 files.
-- Listings are cached in memory for the session. Opening quick open shows
-  the cached list straight away, lists the folder again in the background
-  (shown by a progress bar) and updates the results when it finishes.
-  **Refresh** lists it again on demand.
+- Listings are cached in memory for the session. Opening quick open or
+  returning to the app shows the cached list straight away, lists the
+  folder again in the background (shown by a progress bar) and updates
+  the results when it finishes. **Refresh** lists it again on demand.
 - A failed listing shows an error with a retry.
 - Listing runs on its own background thread, so a large folder does not
   delay saves.

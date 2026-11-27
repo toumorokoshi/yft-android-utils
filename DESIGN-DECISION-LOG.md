@@ -1,5 +1,22 @@
 # Design Decision Log
 
+## 2026-11-27: Refresh Quick Open on resume and handle SAF EXTRA_LOADING
+
+Adding new files to the saved root folder from another app or sync client
+could leave Quick Open showing stale results: `QuickOpenPage` only
+refreshed on mount, and `Documents.walkTree` did not wait for Storage Access
+Framework providers that return `EXTRA_LOADING` cursors.
+
+- **Refresh on `AppLifecycleState.resumed`.** `QuickOpenPage` now registers
+  an `AppLifecycleListener` and refreshes the root folder when returning to
+  the app, guarded by a `_refreshToken` generation counter so overlapping
+  refreshes cannot clear the progress indicator early or apply stale
+  results.
+- **Wait for `DocumentsContract.EXTRA_LOADING`.** `Documents.walkTree` now
+  observes `EXTRA_LOADING` cursors via `ContentObserver` (up to 5 seconds)
+  and re-queries before reading children, and looks up column indices by
+  name rather than assuming projection order.
+
 ## 2026-11-27: Collapsible right-hand navigation sidebar
 
 Navigating between headings in longer markdown notes and switching to

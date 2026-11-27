@@ -37,23 +37,33 @@ class QuickOpenPage extends StatefulWidget {
 
 class _QuickOpenPageState extends State<QuickOpenPage> {
   final _query = TextEditingController();
+  late final AppLifecycleListener _lifecycle;
   bool _loaded = false;
   Document? _folder;
   List<FolderFile> _files = const [];
   List<String> _recent = const [];
   bool _listing = false;
   String? _error;
+  int _refreshToken = 0;
 
   @override
   void initState() {
     super.initState();
+    _lifecycle = AppLifecycleListener(onResume: _onResume);
     unawaited(_load());
   }
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _query.dispose();
     super.dispose();
+  }
+
+  void _onResume() {
+    if (_folder case final folder?) {
+      unawaited(_refresh(folder));
+    }
   }
 
   Future<void> _load() async {
@@ -71,6 +81,7 @@ class _QuickOpenPageState extends State<QuickOpenPage> {
 
   Future<void> _refresh(Document folder) async {
     final index = widget.services.folderIndex;
+    final token = ++_refreshToken;
     setState(() {
       _files = index.cached(folder) ?? const [];
       _listing = true;
@@ -78,14 +89,18 @@ class _QuickOpenPageState extends State<QuickOpenPage> {
     });
     try {
       final files = await index.refresh(folder);
-      if (mounted && _folder == folder) setState(() => _files = files);
+      if (mounted && _folder == folder && token == _refreshToken) {
+        setState(() => _files = files);
+      }
     } on PlatformException catch (error, stackTrace) {
       _log.warning('could not list $folder', error, stackTrace);
-      if (mounted && _folder == folder) {
+      if (mounted && _folder == folder && token == _refreshToken) {
         setState(() => _error = 'Could not list ${folder.name}.');
       }
     } finally {
-      if (mounted && _folder == folder) setState(() => _listing = false);
+      if (mounted && _folder == folder && token == _refreshToken) {
+        setState(() => _listing = false);
+      }
     }
   }
 
