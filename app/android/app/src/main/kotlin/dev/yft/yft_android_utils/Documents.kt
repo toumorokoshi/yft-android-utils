@@ -2,10 +2,14 @@ package dev.yft.yft_android_utils
 
 import android.content.Context
 import android.content.Intent
+import android.database.ContentObserver
+import android.database.Cursor
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /** Storage Access Framework helpers shared by the app and the home screen widget. */
 object Documents {
@@ -187,13 +191,16 @@ object Documents {
         while (folders.isNotEmpty() && count < limit) {
             val (folderId, prefix) = folders.removeFirst()
             val children = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, folderId)
-            context.contentResolver.query(children, CHILD_COLUMNS, null, null, null)?.use { cursor ->
+            queryChildren(context, children, waitForLoading = true)?.use { cursor ->
+                val idIndex = columnIndex(cursor, DocumentsContract.Document.COLUMN_DOCUMENT_ID, 0)
+                val nameIndex = columnIndex(cursor, DocumentsContract.Document.COLUMN_DISPLAY_NAME, 1)
+                val mimeIndex = columnIndex(cursor, DocumentsContract.Document.COLUMN_MIME_TYPE, 2)
                 while (cursor.moveToNext() && count < limit) {
-                    val id = cursor.getString(0)
-                    val name = cursor.getString(1)
+                    val id = cursor.getString(idIndex)
+                    val name = cursor.getString(nameIndex)
                     if (id != null && name != null && !name.startsWith(".")) {
                         val path = prefix + name
-                        if (cursor.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR) {
+                        if (cursor.getString(mimeIndex) == DocumentsContract.Document.MIME_TYPE_DIR) {
                             folders.addLast(id to "$path/")
                         } else {
                             count++
@@ -204,6 +211,47 @@ object Documents {
             }
         }
     }
+
+    /**
+     * Queries [childrenUri]. When [waitForLoading] is true and the provider sets
+     * [DocumentsContract.EXTRA_LOADING] (common on cloud/sync providers returning a stale cache),
+     * waits briefly for the provider's change notification and re-queries.
+     */
+    private fun queryChildren(
+        context: Context,
+        childrenUri: Uri,
+        waitForLoading: Boolean = false,
+    ): Cursor? {
+        val cursor =
+            context.contentResolver.query(childrenUri, CHILD_COLUMNS, null, null, null)
+                ?: return null
+        if (!waitForLoading || !isLoading(cursor)) return cursor
+        val latch = CountDownLatch(1)
+        val observer =
+            object : ContentObserver(null) {
+                override fun onChange(selfChange: Boolean) {
+                    latch.countDown()
+                }
+            }
+        cursor.registerContentObserver(observer)
+        try {
+            if (isLoading(cursor)) {
+                latch.await(EXTRA_LOADING_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            }
+        } finally {
+            cursor.unregisterContentObserver(observer)
+        }
+        cursor.close()
+        return context.contentResolver.query(childrenUri, CHILD_COLUMNS, null, null, null)
+    }
+
+    private fun isLoading(cursor: Cursor): Boolean =
+        cursor.extras?.getBoolean(DocumentsContract.EXTRA_LOADING, false) == true
+
+    private fun columnIndex(cursor: Cursor, column: String, fallback: Int): Int =
+        cursor.getColumnIndex(column).takeIf { it >= 0 } ?: fallback
+
+    private const val EXTRA_LOADING_TIMEOUT_MS = 5_000L
 
     private val CHILD_COLUMNS =
         arrayOf(

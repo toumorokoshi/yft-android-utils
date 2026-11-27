@@ -117,6 +117,21 @@ void main() {
     expect(richText('notes.md'), findsOne);
   });
 
+  testWidgets('refreshes the listing when the app resumes', (tester) async {
+    final folders = FakeFolderStore(files: {notesFolder.uri: files});
+    await pumpQuickOpen(
+      tester,
+      fakeServices(folders: folders, rootFolder: FakeRootFolder(notesFolder)),
+    );
+    expect(richText('added.md'), findsNothing);
+
+    folders.files[notesFolder.uri] = [...files, folderFile('added.md')];
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    expect(richText('added.md'), findsOne);
+  });
+
   group('highlightSpans', () {
     const bold = TextStyle(fontWeight: FontWeight.bold);
 
